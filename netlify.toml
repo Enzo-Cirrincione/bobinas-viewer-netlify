@@ -1,13 +1,8 @@
 [build]
-  functions = "netlify/functions"
+  functions = "functions"
   publish = "."
 
-# Opcional: mapear rutas limpias
-[[redirects]]
-  from = "/api/bobina"
-  to = "/.netlify/functions/get-bobina"
-  status = 200
-
+# POSTs protegidos (proxies)
 [[redirects]]
   from = "/api/update"
   to = "/.netlify/functions/post-update"
@@ -16,4 +11,10 @@
 [[redirects]]
   from = "/api/devolucion"
   to = "/.netlify/functions/post-devolucion"
+  status = 200
+
+# (Opcional) GET proxy si tu Flow GET exige key
+[[redirects]]
+  from = "/api/bobina"
+  to = "/.netlify/functions/get-bobina"
   status = 200
