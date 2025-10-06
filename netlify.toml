@@ -1,0 +1,19 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+# Opcional: mapear rutas limpias
+[[redirects]]
+  from = "/api/bobina"
+  to = "/.netlify/functions/get-bobina"
+  status = 200
+
+[[redirects]]
+  from = "/api/update"
+  to = "/.netlify/functions/post-update"
+  status = 200
+
+[[redirects]]
+  from = "/api/devolucion"
+  to = "/.netlify/functions/post-devolucion"
+  status = 200
