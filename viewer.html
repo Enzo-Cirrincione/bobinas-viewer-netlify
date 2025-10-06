@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Ficha de bobina</title>
+<meta name="color-scheme" content="light dark" />
+<style>
+  :root{ --bg:#0b0e14; --card:#111520; --muted:#97a3b6; --text:#e6edf6; --accent:#4f46e5; --ok:#16a34a; --err:#ef4444; --border:#1c2233; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f7f8fb; --card:#fff; --muted:#64748b; --text:#0f172a; --accent:#4f46e5; --ok:#16a34a; --err:#dc2626; --border:#e5e7eb; --shadow:0 10px 30px rgba(2,6,23,.08) }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent }
+  body{ margin:0; padding:16px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--text) }
+  .wrap{ max-width:820px; margin:0 auto; display:grid; gap:12px }
+  .card{ border:1px solid var(--border); border-radius:16px; background:var(--card); padding:16px; box-shadow:var(--shadow) }
+  .title{ margin:0 0 8px; font-size:22px; font-weight:800 }
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .kv{ display:grid; gap:10px }
+  .kv .k{ color:var(--muted); min-width:160px; display:inline-block }
+  .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:var(--accent); color:#fff; font-weight:800; cursor:pointer }
+  .btn-ghost{ padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700 }
+  .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .hero-img{ width:100%; max-height:40vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
+  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="card">
+    <h1 class="title">Ficha de bobina</h1>
+    <div id="status" class="muted">Cargando…</div>
+
+    <div id="card" style="display:none">
+      <div class="kv">
+        <div><span class="k">ID_FILA:</span> <span id="ID_FILA"></span></div>
+        <div><span class="k">CÓDIGO:</span> <span id="CODIGO"></span></div>
+        <div><span class="k">DESCRIPCIÓN:</span> <span id="DESCRIPCION"></span></div>
+
+        <!-- CANTIDAD (editable) -->
+        <div>
+          <span class="k">CANTIDAD:</span>
+          <span id="CANTIDAD"></span>
+          <button class="btn-ghost" id="editCantBtn">Editar</button>
+          <div id="editCantWrap" class="inline-edit" style="display:none; margin-top:8px">
+            <input id="editCantInput" class="input" type="number" step="1" min="0" />
+            <button id="saveCantBtn" class="btn">Guardar</button>
+            <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
+            <span id="editCantStatus" class="muted"></span>
+          </div>
+        </div>
+
+        <!-- UBICACIÓN (editable) -->
+        <div>
+          <span class="k">UBICACIÓN:</span>
+          <span id="UBICACION_ALMACEN"></span>
+          <button class="btn-ghost" id="editUbicBtn">Editar</button>
+          <div id="editUbicWrap" class="inline-edit" style="display:none; margin-top:8px">
+            <input id="editUbicInput" class="input" type="text" />
+            <button id="saveUbicBtn" class="btn">Guardar</button>
+            <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
+            <span id="editUbicStatus" class="muted"></span>
+          </div>
+        </div>
+
+        <!-- ESTADO (editable) -->
+        <div>
+          <span class="k">ESTADO:</span>
+          <span id="ESTADO"></span>
+          <button class="btn-ghost" id="editEstadoBtn">Editar</button>
+          <div id="editEstadoWrap" class="inline-edit" style="display:none; margin-top:8px">
+            <select id="editEstadoInput" class="input">
+              <option value="">—</option>
+              <option value="ALMACEN">ALMACEN</option>
+              <option value="LINEA">LINEA</option>
+              <option value="BAJA">BAJA</option>
+            </select>
+            <button id="saveEstadoBtn" class="btn">Guardar</button>
+            <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
+            <span id="editEstadoStatus" class="muted"></span>
+          </div>
+        </div>
+
+        <div><span class="k">PROVEEDOR:</span> <span id="PROVEEDOR"></span></div>
+        <div><span class="k">FECHA INGRESO:</span> <span id="FECHA_INGRESO"></span></div>
+        <div><span class="k">LOTE:</span> <span id="LOTE"></span></div>
+        <div><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION"></span></div>
+        <div><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA"></span></div>
+        <div><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION"></span></div>
+      </div>
+
+      <div style="margin-top:12px" id="imgWrap" class="muted">Cargando imagen…</div>
+      <div id="urlWrap" style="margin-top:6px"></div>
+
+      <hr style="border:none;border-top:1px solid var(--border); margin:16px 0">
+
+      <!-- DEVOLUCIONES -->
+      <h2 class="title">Cargar devolución</h2>
+      <div class="row">
+        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
+        <select id="devLinea" class="input" aria-label="Línea">
+          <option value="">Línea…</option>
+          <option value="L0">L0</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="TM">TM</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="devUsuario" class="input" type="text" placeholder="Usuario" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="sendDevBtn" class="btn">Enviar devolución</button>
+        <span id="devStatus" class="muted"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  /* =========================
+     CONFIG: Pega tus URLs de Flow
+     ========================= */
+  const CFG = {
+    GET_BOBINA_URL:   'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0422dd6249344ba398f7d00371866b13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3G_A6jl9gC18miUdUZL2qqX9IN0wzoBHz8dyFv5VEdo',   // acepta ?id=...
+    POST_UPDATE_URL:  'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd5d000464ef4d97baf185d807526b01/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zRaLBPxc67da-vfHORBbGz9BQOn3WZ5k0QOXHn5xYYE',   // HTTP POST
+    POST_DEV_URL:     'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1a4e45cf10924b3a83728b30f93b7a25/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=91N-BvDVK3aEzISao5bdEW26irYN144kONtNyhvtFjI'// HTTP POST
+  };
+
+  /* =========================
+     Utilidades
+     ========================= */
+  function qs(n){ return new URLSearchParams(location.search).get(n); }
+  function normSharePoint(u){
+    if(!u) return u;
+    u = u.replace(/%2520/g,'%20');
+    try{
+      const url = new URL(u);
+      if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')){
+        if (!url.searchParams.has('download')) url.searchParams.set('download','1');
+        return url.toString();
+      }
+      if (url.pathname.includes('/Forms/AllItems.aspx')){
+        const idParam = url.searchParams.get('id');
+        if (idParam){
+          const decoded = decodeURIComponent(idParam);
+          const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
+          return base + encodeURIComponent(decoded);
+        }
+      }
+      return u;
+    }catch{ return u; }
+  }
+  // Excel serial date → yyyy-mm-dd (si llega número)
+  function excelDateToISO(v){
+    const n = Number(v);
+    if (!isFinite(n) || n<=0) return v||'';
+    const d = new Date(Math.round((n - 25569) * 86400 * 1000)); // base 1899-12-30
+    return d.toISOString().slice(0,10);
+  }
+  function setLoading(btn, on, labelBusy){
+    if(!btn) return;
+    if(on){
+      btn.disabled = true;
+      btn.dataset.label = btn.textContent;
+      btn.textContent = labelBusy || 'Guardando…';
+    }else{
+      btn.disabled = false;
+      btn.textContent = btn.dataset.label || btn.textContent;
+    }
+  }
+  function val(v){ return v==null ? '' : String(v); }
+
+  /* =========================
+     Estado
+     ========================= */
+  let DATA = {}; // fila de T_BOBINAS
+
+  /* =========================
+     Carga inicial
+     ========================= */
+  async function main(){
+    const id = qs('id');
+    const statusEl = document.getElementById('status');
+    const cardEl = document.getElementById('card');
+    if(!id){ statusEl.textContent = "Falta parámetro 'id'"; return; }
+
+    try{
+      statusEl.textContent = 'Consultando…';
+      const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_ts=${Date.now()}`;
+      const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
+      const txt = await r.text();
+      let data; try{ data = JSON.parse(txt); } catch{ data = { error:'parse_error', raw:txt }; }
+      if(!r.ok || data.error){ statusEl.innerHTML = `<span class="err">Error: ${data.message || data.error || r.status}</span>`; return; }
+
+      DATA = data;
+      render(data);
+      statusEl.style.display='none';
+      cardEl.style.display='block';
+    }catch(e){
+      statusEl.innerHTML = `<span class="err">${e?.message || 'Error inesperado'}</span>`;
+    }
+  }
+
+  function get(data, k, alts=[]){
+    if (data[k]!=null && data[k]!=='') return data[k];
+    for(const a of alts){ if(data[a]!=null && data[a] !== '') return data[a]; }
+    return '';
+  }
+
+  function render(d){
+    const idFila = get(d,'ID_FILA');
+    const codigo = get(d,'CODIGO',['CÓDIGO']);
+    const desc   = get(d,'DESCRIPCION',['DESCRIPCIÓN']);
+    const cant   = get(d,'CANTIDAD');
+    const prov   = get(d,'PROVEEDOR');
+    const fIng   = get(d,'FECHA_INGRESO',['FECHA INGRESO']);
+    const lote   = get(d,'LOTE');
+    const fDev   = get(d,'FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
+    const linea  = get(d,'ULTIMA_LINEA',['LINEA']);
+    const ubi    = get(d,'UBICACION_ALMACEN',['UBICACIÓN']);
+    const est    = get(d,'ESTADO');
+    const obs    = get(d,'OBSERVACION',['OBSERVACIÓN']);
+    const img    = get(d,'IMAGEN_URL');
+    const url    = get(d,'URL');
+
+    // Fechas: si llegan seriales, las formateamos
+    const FIng = (/^\d+(\.\d+)?$/.test(String(fIng))) ? excelDateToISO(fIng) : val(fIng);
+    const FDev = (/^\d+(\.\d+)?$/.test(String(fDev))) ? excelDateToISO(fDev) : val(fDev);
+
+    document.getElementById('ID_FILA').textContent = val(idFila);
+    document.getElementById('CODIGO').textContent = val(codigo);
+    document.getElementById('DESCRIPCION').textContent = val(desc);
+    document.getElementById('CANTIDAD').textContent = val(cant);
+    document.getElementById('PROVEEDOR').textContent = val(prov);
+    document.getElementById('FECHA_INGRESO').textContent = FIng || '—';
+    document.getElementById('LOTE').textContent = val(lote);
+    document.getElementById('FECHA_DEVOLUCION').textContent = FDev || '—';
+    document.getElementById('ULTIMA_LINEA').textContent = val(linea);
+    document.getElementById('UBICACION_ALMACEN').textContent = val(ubi);
+    document.getElementById('ESTADO').textContent = val(est);
+    document.getElementById('OBSERVACION').textContent = val(obs);
+
+    const imgWrap = document.getElementById('imgWrap');
+    if (img){
+      const u = normSharePoint(img);
+      imgWrap.innerHTML = `<img class="hero-img" src="${u}" alt="Etiqueta" loading="lazy" referrerpolicy="no-referrer">`+
+                          `<div style="margin-top:6px"><a href="${u}" target="_blank" rel="noreferrer">Abrir imagen</a></div>`;
+    } else {
+      imgWrap.textContent = 'Sin imagen';
+    }
+    const urlWrap = document.getElementById('urlWrap');
+    urlWrap.innerHTML = url ? `<a href="${url}" target="_blank" rel="noreferrer">Ficha/Imagen (SharePoint)</a>` : '';
+
+    // preparar ediciones (colocamos valores actuales)
+    document.getElementById('editCantInput').value = cant || 0;
+    document.getElementById('editUbicInput').value = ubi || '';
+    document.getElementById('editEstadoInput').value = est || '';
+  }
+
+  /* =========================
+     Editar campos → POST_UPDATE
+     ========================= */
+  async function postUpdate(payload){
+    const r = await fetch(CFG.POST_UPDATE_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json().catch(()=> ({}));
+  }
+  function refreshAfterUpdate(){
+    // volver a leer para mostrar el valor actualizado
+    const id = qs('id');
+    const statusEl = document.getElementById('status');
+    statusEl.style.display='block'; statusEl.textContent='Actualizando…';
+    document.getElementById('card').style.display='none';
+    setTimeout(main, 50);
+  }
+
+  // CANTIDAD
+  document.getElementById('editCantBtn').onclick = () => {
+    document.getElementById('editCantWrap').style.display='flex';
+  };
+  document.getElementById('cancelCantBtn').onclick = () => {
+    document.getElementById('editCantWrap').style.display='none';
+    document.getElementById('editCantStatus').textContent='';
+  };
+  document.getElementById('saveCantBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    const v = Number(document.getElementById('editCantInput').value);
+    const id = qs('id');
+    if (isNaN(v) || v < 0){ document.getElementById('editCantStatus').innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
+    try{
+      setLoading(btn,true,'Guardando…');
+      await postUpdate({ id, updates: { CANTIDAD: v } });
+      document.getElementById('editCantStatus').innerHTML = '<span class="ok">Guardado.</span>';
+      refreshAfterUpdate();
+    }catch(err){
+      document.getElementById('editCantStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
+    }finally{ setLoading(btn,false); }
+  };
+
+  // UBICACIÓN
+  document.getElementById('editUbicBtn').onclick = () => {
+    document.getElementById('editUbicWrap').style.display='flex';
+  };
+  document.getElementById('cancelUbicBtn').onclick = () => {
+    document.getElementById('editUbicWrap').style.display='none';
+    document.getElementById('editUbicStatus').textContent='';
+  };
+  document.getElementById('saveUbicBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    const v = document.getElementById('editUbicInput').value.trim();
+    const id = qs('id');
+    if (!v){ document.getElementById('editUbicStatus').innerHTML = '<span class="err">Ingresá una ubicación.</span>'; return; }
+    try{
+      setLoading(btn,true,'Guardando…');
+      await postUpdate({ id, updates: { UBICACION_ALMACEN: v } });
+      document.getElementById('editUbicStatus').innerHTML = '<span class="ok">Guardado.</span>';
+      refreshAfterUpdate();
+    }catch(err){
+      document.getElementById('editUbicStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
+    }finally{ setLoading(btn,false); }
+  };
+
+  // ESTADO
+  document.getElementById('editEstadoBtn').onclick = () => {
+    document.getElementById('editEstadoWrap').style.display='flex';
+  };
+  document.getElementById('cancelEstadoBtn').onclick = () => {
+    document.getElementById('editEstadoWrap').style.display='none';
+    document.getElementById('editEstadoStatus').textContent='';
+  };
+  document.getElementById('saveEstadoBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    const v = document.getElementById('editEstadoInput').value;
+    const id = qs('id');
+    try{
+      setLoading(btn,true,'Guardando…');
+      await postUpdate({ id, updates: { ESTADO: v } });
+      document.getElementById('editEstadoStatus').innerHTML = '<span class="ok">Guardado.</span>';
+      refreshAfterUpdate();
+    }catch(err){
+      document.getElementById('editEstadoStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
+    }finally{ setLoading(btn,false); }
+  };
+
+  /* =========================
+     Devoluciones → POST_DEVOLUCION
+     ========================= */
+  async function postDevolucion(payload){
+    const r = await fetch(CFG.POST_DEV_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json().catch(()=> ({}));
+  }
+  document.getElementById('sendDevBtn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    const id = qs('id');
+    const cantidad = Number(document.getElementById('devCant').value);
+    const linea = document.getElementById('devLinea').value;
+    const usuario = document.getElementById('devUsuario').value.trim();
+    const observacion = document.getElementById('devObs').value.trim();
+
+    const st = document.getElementById('devStatus');
+    st.textContent='';
+
+    if (isNaN(cantidad) || cantidad <= 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
+    if (!linea){ st.innerHTML = '<span class="err">Elegí una línea.</span>'; return; }
+    if (!usuario){ st.innerHTML = '<span class="err">Ingresá el usuario.</span>'; return; }
+
+    try{
+      setLoading(btn,true,'Enviando…');
+      await postDevolucion({
+        id,
+        cantidad_devuelta: cantidad,
+        linea,
+        observacion,
+        usuario
+      });
+      st.innerHTML = '<span class="ok">Devolución registrada.</span>';
+      // limpiar inputs
+      document.getElementById('devCant').value='';
+      document.getElementById('devLinea').value='';
+      document.getElementById('devUsuario').value='';
+      document.getElementById('devObs').value='';
+      // refrescar ficha
+      refreshAfterUpdate();
+    }catch(err){
+      st.innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
+    }finally{ setLoading(btn,false); }
+  };
+
+  // Go!
+  main();
+</script>
+</body>
+</html>
