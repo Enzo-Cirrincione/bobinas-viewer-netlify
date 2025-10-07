@@ -6,99 +6,130 @@
 <title>Ficha de bobina</title>
 <meta name="color-scheme" content="light dark" />
 <style>
-  :root{ --bg:#0b0e14; --card:#111520; --muted:#97a3b6; --text:#e6edf6; --accent:#4f46e5; --ok:#16a34a; --err:#ef4444; --border:#1c2233; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px }
-  @media (prefers-color-scheme: light){
-    :root{ --bg:#f7f8fb; --card:#fff; --muted:#64748b; --text:#0f172a; --accent:#4f46e5; --ok:#16a34a; --err:#dc2626; --border:#e5e7eb; --shadow:0 10px 30px rgba(2,6,23,.08) }
+  :root{
+    --bg:#0b0e14; --card:#111520; --muted:#97a3b6; --text:#e6edf6; --accent:#4f46e5;
+    --ok:#16a34a; --err:#ef4444; --warn:#ef4444; --border:#1c2233; --shadow:0 10px 30px rgba(0,0,0,.35);
+    --radius:16px;
   }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent }
-  body{ margin:0; padding:16px; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--text) }
-  .wrap{ max-width:820px; margin:0 auto; display:grid; gap:12px }
-  .card{ border:1px solid var(--border); border-radius:16px; background:var(--card); padding:16px; box-shadow:var(--shadow) }
-  .title{ margin:0 0 8px; font-size:22px; font-weight:800 }
-  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  .kv{ display:grid; gap:10px }
-  .kv .k{ color:var(--muted); min-width:160px; display:inline-block }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f7f8fb; --card:#ffffff; --muted:#64748b; --text:#0f172a; --accent:#4f46e5;
+      --ok:#16a34a; --err:#dc2626; --warn:#dc2626; --border:#e5e7eb; --shadow:0 10px 30px rgba(2,6,23,.08);
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  body{ margin:0; padding:16px; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
+  .wrap{ max-width:900px; margin:0 auto; display:grid; gap:14px }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px }
+  .title{ margin:0 0 8px; font-size:20px; font-weight:900; display:flex; align-items:center; gap:10px }
+  .subtitle{ margin:0 0 10px; font-weight:800; font-size:16px; color:var(--muted) }
   .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
-  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px }
+  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .grid{ display:grid; gap:10px }
+  .k{ color:var(--muted); min-width:150px; display:inline-block }
+  .code-big{ font-size:22px; font-weight:900; letter-spacing:.3px }
   .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:var(--accent); color:#fff; font-weight:800; cursor:pointer }
-  .btn-ghost{ padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700 }
+  .btn-ghost{ padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
+  .btn[disabled]{ opacity:.6; cursor:not-allowed }
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px }
+  textarea{ resize:vertical }
   .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-  .hero-img{ width:100%; max-height:40vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
+  .imgwrap{ display:grid; gap:8px }
+  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
   .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; }
+  details > summary{ list-style:none; cursor:pointer; user-select:none; }
+  details > summary::-webkit-details-marker{ display:none; }
+  .caret{ transition:transform .2s ease; display:inline-block }
+  details[open] .caret{ transform:rotate(90deg) }
+  .alert-old{ outline:2px solid var(--warn); box-shadow:0 0 0 4px color-mix(in oklab, var(--warn) 15%, transparent) }
+  @media (max-width:640px){
+    .k{ min-width:120px }
+    .code-big{ font-size:20px }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <section class="card">
-    <h1 class="title">Ficha de bobina</h1>
-    <div id="status" class="muted">Cargando…</div>
+  <!-- FICHA DATOS -->
+  <section id="cardDatos" class="card">
+    <h1 class="title">
+      <span>FICHA BOBINA</span>
+      <span class="badge" id="badgeId">ID: —</span>
+    </h1>
 
-    <div id="card" style="display:none">
-      <div class="kv">
-        <div><span class="k">ID_FILA:</span> <span id="ID_FILA"></span></div>
-        <div><span class="k">CÓDIGO:</span> <span id="CODIGO"></span></div>
-        <div><span class="k">DESCRIPCIÓN:</span> <span id="DESCRIPCION"></span></div>
-
-        <!-- CANTIDAD (editable) -->
-        <div>
-          <span class="k">CANTIDAD:</span>
-          <span id="CANTIDAD"></span>
+    <div class="grid">
+      <div><span class="k">CÓDIGO:</span> <span id="CODIGO" class="code-big"></span></div>
+      <div><span class="k">DESCRIPCIÓN:</span> <span id="DESCRIPCION"></span></div>
+      <div class="row">
+        <div><span class="k">INGRESO:</span> <span id="FECHA_INGRESO"></span></div>
+        <div><span class="k">CANTIDAD:</span> <span id="CANTIDAD"></span>
           <button class="btn-ghost" id="editCantBtn">Editar</button>
-          <div id="editCantWrap" class="inline-edit" style="display:none; margin-top:8px">
-            <input id="editCantInput" class="input" type="number" step="1" min="0" />
-            <button id="saveCantBtn" class="btn">Guardar</button>
-            <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
-            <span id="editCantStatus" class="muted"></span>
-          </div>
         </div>
-
-        <!-- UBICACIÓN (editable) -->
-        <div>
-          <span class="k">UBICACIÓN:</span>
-          <span id="UBICACION_ALMACEN"></span>
-          <button class="btn-ghost" id="editUbicBtn">Editar</button>
-          <div id="editUbicWrap" class="inline-edit" style="display:none; margin-top:8px">
-            <input id="editUbicInput" class="input" type="text" />
-            <button id="saveUbicBtn" class="btn">Guardar</button>
-            <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
-            <span id="editUbicStatus" class="muted"></span>
-          </div>
-        </div>
-
-        <!-- ESTADO (editable) -->
-        <div>
-          <span class="k">ESTADO:</span>
-          <span id="ESTADO"></span>
-          <button class="btn-ghost" id="editEstadoBtn">Editar</button>
-          <div id="editEstadoWrap" class="inline-edit" style="display:none; margin-top:8px">
-            <select id="editEstadoInput" class="input">
-              <option value="">—</option>
-              <option value="ALMACEN">ALMACEN</option>
-              <option value="LINEA">LINEA</option>
-              <option value="BAJA">BAJA</option>
-            </select>
-            <button id="saveEstadoBtn" class="btn">Guardar</button>
-            <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
-            <span id="editEstadoStatus" class="muted"></span>
-          </div>
-        </div>
-
         <div><span class="k">PROVEEDOR:</span> <span id="PROVEEDOR"></span></div>
-        <div><span class="k">FECHA INGRESO:</span> <span id="FECHA_INGRESO"></span></div>
-        <div><span class="k">LOTE:</span> <span id="LOTE"></span></div>
-        <div><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION"></span></div>
-        <div><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA"></span></div>
-        <div><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION"></span></div>
       </div>
 
-      <div style="margin-top:12px" id="imgWrap" class="muted">Cargando imagen…</div>
-      <div id="urlWrap" style="margin-top:6px"></div>
+      <!-- EDITAR CANTIDAD -->
+      <div id="editCantWrap" class="inline-edit" style="display:none">
+        <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
+        <button id="saveCantBtn" class="btn">Guardar</button>
+        <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
+        <span id="editCantStatus" class="muted"></span>
+      </div>
 
-      <hr style="border:none;border-top:1px solid var(--border); margin:16px 0">
+      <!-- EDITAR UBICACIÓN -->
+      <div>
+        <span class="k">UBICACIÓN:</span> <span id="UBICACION_ALMACEN"></span>
+        <button class="btn-ghost" id="editUbicBtn">Editar</button>
+      </div>
+      <div id="editUbicWrap" class="inline-edit" style="display:none">
+        <input id="editUbicInput" class="input" type="text" />
+        <button id="saveUbicBtn" class="btn">Guardar</button>
+        <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
+        <span id="editUbicStatus" class="muted"></span>
+      </div>
 
-      <!-- DEVOLUCIONES -->
-      <h2 class="title">Cargar devolución</h2>
+      <!-- EDITAR ESTADO -->
+      <div>
+        <span class="k">ESTADO:</span> <span id="ESTADO"></span>
+        <button class="btn-ghost" id="editEstadoBtn">Editar</button>
+      </div>
+      <div id="editEstadoWrap" class="inline-edit" style="display:none">
+        <select id="editEstadoInput" class="input">
+          <option value="">—</option>
+          <option value="ALMACEN">ALMACEN</option>
+          <option value="LINEA">LINEA</option>
+          <option value="BAJA">BAJA</option>
+        </select>
+        <button id="saveEstadoBtn" class="btn">Guardar</button>
+        <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
+        <span id="editEstadoStatus" class="muted"></span>
+      </div>
+
+      <!-- VER MÁS -->
+      <details id="detalles">
+        <summary class="row"><span class="caret">▶</span> <b>Ver más</b></summary>
+        <div class="grid" style="margin-top:8px">
+          <div><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION"></span></div>
+          <div><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA"></span></div>
+          <div><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION"></span></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- FICHA IMAGEN -->
+  <section class="card imgwrap">
+    <h2 class="title">Imagen</h2>
+    <div id="imgStatus" class="muted">Cargando imagen…</div>
+    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" style="display:none" loading="lazy" referrerpolicy="no-referrer" />
+    <div id="imgLinkWrap"></div>
+  </section>
+
+  <!-- FICHA DEVOLUCIÓN -->
+  <section class="card">
+    <h2 class="title">Cargar devolución</h2>
+    <div class="grid" style="gap:10px">
       <div class="row">
         <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
         <select id="devLinea" class="input" aria-label="Línea">
@@ -109,18 +140,27 @@
           <option value="TM">TM</option>
         </select>
       </div>
-      <div class="row" style="margin-top:8px">
-        <input id="devUsuario" class="input" type="text" placeholder="Usuario" />
+      <div class="row">
+        <select id="devUsuario" class="input" aria-label="Usuario">
+          <option value="">Usuario…</option>
+          <option>Noe</option>
+          <option>Miguel</option>
+          <option>Marcelo</option>
+          <option>Carlos</option>
+          <option>Cande</option>
+        </select>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row">
         <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row">
         <button id="sendDevBtn" class="btn">Enviar devolución</button>
         <span id="devStatus" class="muted"></span>
       </div>
     </div>
   </section>
+
+  <div id="status" class="muted"></div>
 </div>
 
 <script>
@@ -132,278 +172,295 @@
     POST_UPDATE_URL:  '/api/update',   // HTTP POST
     POST_DEV_URL:     '/api/devolucion'// HTTP POST
   };
+const CFG = {
+  GET_BOBINA_URL:  '/api/bobina?',      // <— ajustá acá según Vercel/Netlify
+  POST_UPDATE_URL: '/api/update',
+  POST_DEV_URL:    '/api/devolucion'
+};
 
-  /* =========================
-     Utilidades
-     ========================= */
-  function qs(n){ return new URLSearchParams(location.search).get(n); }
-  function normSharePoint(u){
-    if(!u) return u;
-    u = u.replace(/%2520/g,'%20');
-    try{
-      const url = new URL(u);
-      if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')){
-        if (!url.searchParams.has('download')) url.searchParams.set('download','1');
-        return url.toString();
-      }
-      if (url.pathname.includes('/Forms/AllItems.aspx')){
-        const idParam = url.searchParams.get('id');
-        if (idParam){
-          const decoded = decodeURIComponent(idParam);
-          const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
-          return base + encodeURIComponent(decoded);
-        }
-      }
-      return u;
-    }catch{ return u; }
+/* ====== Utilidades ====== */
+const qs = (n)=>new URLSearchParams(location.search).get(n);
+function excelSerialToDMY(v){
+  const n = Number(v);
+  if (!isFinite(n) || n<=0) return (v||'');
+  // Excel base: 1899-12-30
+  const d = new Date(Math.round((n - 25569) * 86400 * 1000));
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+function parseDateMaybe(serialOrIso){
+  // vuelve Date si puede; si no, null
+  if (serialOrIso == null || serialOrIso === '') return null;
+  if (/^\d+(\.\d+)?$/.test(String(serialOrIso))) {
+    const n = Number(serialOrIso);
+    const t = Math.round((n - 25569) * 86400 * 1000);
+    return new Date(t);
   }
-  // Excel serial date → yyyy-mm-dd (si llega número)
-  function excelDateToISO(v){
-    const n = Number(v);
-    if (!isFinite(n) || n<=0) return v||'';
-    const d = new Date(Math.round((n - 25569) * 86400 * 1000)); // base 1899-12-30
-    return d.toISOString().slice(0,10);
+  const d = new Date(serialOrIso);
+  return isNaN(d.getTime()) ? null : d;
+}
+function yearsDiff(from, to){
+  const msYear = 365.25*24*3600*1000;
+  return (to - from)/msYear;
+}
+function setLoading(btn, on, labelBusy){
+  if(!btn) return;
+  if(on){
+    btn.disabled = true;
+    btn.dataset.label = btn.textContent;
+    btn.textContent = labelBusy || 'Procesando…';
+  }else{
+    btn.disabled = false;
+    btn.textContent = btn.dataset.label || btn.textContent;
   }
-  function setLoading(btn, on, labelBusy){
-    if(!btn) return;
-    if(on){
-      btn.disabled = true;
-      btn.dataset.label = btn.textContent;
-      btn.textContent = labelBusy || 'Guardando…';
-    }else{
-      btn.disabled = false;
-      btn.textContent = btn.dataset.label || btn.textContent;
+}
+function normSP(u){
+  if(!u) return u;
+  u = u.replace(/%2520/g,'%20');
+  try{
+    const url = new URL(u);
+    if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')){
+      if (!url.searchParams.has('download')) url.searchParams.set('download','1');
+      return url.toString();
     }
-  }
-  function val(v){ return v==null ? '' : String(v); }
-
-  /* =========================
-     Estado
-     ========================= */
-  let DATA = {}; // fila de T_BOBINAS
-
-  /* =========================
-     Carga inicial
-     ========================= */
-  async function main(){
-    const id = qs('id');
-    const statusEl = document.getElementById('status');
-    const cardEl = document.getElementById('card');
-    if(!id){ statusEl.textContent = "Falta parámetro 'id'"; return; }
-
-    try{
-      statusEl.textContent = 'Consultando…';
-      const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_ts=${Date.now()}`;
-      const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
-      const txt = await r.text();
-      let data; try{ data = JSON.parse(txt); } catch{ data = { error:'parse_error', raw:txt }; }
-      if(!r.ok || data.error){ statusEl.innerHTML = `<span class="err">Error: ${data.message || data.error || r.status}</span>`; return; }
-
-      DATA = data;
-      render(data);
-      statusEl.style.display='none';
-      cardEl.style.display='block';
-    }catch(e){
-      statusEl.innerHTML = `<span class="err">${e?.message || 'Error inesperado'}</span>`;
+    if (url.pathname.includes('/Forms/AllItems.aspx')){
+      const idParam = url.searchParams.get('id');
+      if (idParam){
+        const decoded = decodeURIComponent(idParam);
+        const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
+        return base + encodeURIComponent(decoded);
+      }
     }
-  }
+    return u;
+  }catch{ return u; }
+}
 
-  function get(data, k, alts=[]){
-    if (data[k]!=null && data[k]!=='') return data[k];
-    for(const a of alts){ if(data[a]!=null && data[a] !== '') return data[a]; }
+/* ====== Estado global ====== */
+let DATA = {};
+
+/* ====== Render ====== */
+function render(d){
+  const get = (k,alts=[])=>{
+    if (d[k]!=null && d[k] !== '') return d[k];
+    for(const a of alts) if(d[a]!=null && d[a] !== '') return d[a];
     return '';
-  }
+  };
 
-  function render(d){
-    const idFila = get(d,'ID_FILA');
-    const codigo = get(d,'CODIGO',['CÓDIGO']);
-    const desc   = get(d,'DESCRIPCION',['DESCRIPCIÓN']);
-    const cant   = get(d,'CANTIDAD');
-    const prov   = get(d,'PROVEEDOR');
-    const fIng   = get(d,'FECHA_INGRESO',['FECHA INGRESO']);
-    const lote   = get(d,'LOTE');
-    const fDev   = get(d,'FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
-    const linea  = get(d,'ULTIMA_LINEA',['LINEA']);
-    const ubi    = get(d,'UBICACION_ALMACEN',['UBICACIÓN']);
-    const est    = get(d,'ESTADO');
-    const obs    = get(d,'OBSERVACION',['OBSERVACIÓN']);
-    const img    = get(d,'IMAGEN_URL');
-    const url    = get(d,'URL');
+  const idFila = get('ID_FILA');
+  const codigo = get('CODIGO',['CÓDIGO']);
+  const desc   = get('DESCRIPCION',['DESCRIPCIÓN']);
+  const cant   = get('CANTIDAD');
+  const prov   = get('PROVEEDOR');
+  const fIng   = get('FECHA_INGRESO',['FECHA INGRESO']);
+  const fDev   = get('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
+  const linea  = get('ULTIMA_LINEA',['LINEA']);
+  const ubi    = get('UBICACION_ALMACEN',['UBICACIÓN']);
+  const est    = get('ESTADO');
+  const obs    = get('OBSERVACION',['OBSERVACIÓN']);
+  const imgURL = get('IMAGEN_URL');
+  const url    = get('URL');
 
-    // Fechas: si llegan seriales, las formateamos
-    const FIng = (/^\d+(\.\d+)?$/.test(String(fIng))) ? excelDateToISO(fIng) : val(fIng);
-    const FDev = (/^\d+(\.\d+)?$/.test(String(fDev))) ? excelDateToISO(fDev) : val(fDev);
+  // Título / badge
+  document.getElementById('badgeId').textContent = `ID: ${idFila||'—'}`;
 
-    document.getElementById('ID_FILA').textContent = val(idFila);
-    document.getElementById('CODIGO').textContent = val(codigo);
-    document.getElementById('DESCRIPCION').textContent = val(desc);
-    document.getElementById('CANTIDAD').textContent = val(cant);
-    document.getElementById('PROVEEDOR').textContent = val(prov);
-    document.getElementById('FECHA_INGRESO').textContent = FIng || '—';
-    document.getElementById('LOTE').textContent = val(lote);
-    document.getElementById('FECHA_DEVOLUCION').textContent = FDev || '—';
-    document.getElementById('ULTIMA_LINEA').textContent = val(linea);
-    document.getElementById('UBICACION_ALMACEN').textContent = val(ubi);
-    document.getElementById('ESTADO').textContent = val(est);
-    document.getElementById('OBSERVACION').textContent = val(obs);
+  // Campos
+  document.getElementById('CODIGO').textContent = codigo || '—';
+  document.getElementById('DESCRIPCION').textContent = desc || '—';
+  // fechas formateadas DD/MM/AAAA (si vienen serial)
+  document.getElementById('FECHA_INGRESO').textContent = (/^\d+(\.\d+)?$/.test(String(fIng))) ? excelSerialToDMY(fIng) : (fIng || '—');
+  document.getElementById('FECHA_DEVOLUCION').textContent = (/^\d+(\.\d+)?$/.test(String(fDev))) ? excelSerialToDMY(fDev) : (fDev || '—');
 
-    const imgWrap = document.getElementById('imgWrap');
-    if (img){
-      const u = normSharePoint(img);
-      imgWrap.innerHTML = `<img class="hero-img" src="${u}" alt="Etiqueta" loading="lazy" referrerpolicy="no-referrer">`+
-                          `<div style="margin-top:6px"><a href="${u}" target="_blank" rel="noreferrer">Abrir imagen</a></div>`;
-    } else {
-      imgWrap.textContent = 'Sin imagen';
+  document.getElementById('CANTIDAD').textContent = (cant ?? '') === '' ? '—' : String(cant);
+  document.getElementById('PROVEEDOR').textContent = prov || '—';
+  document.getElementById('UBICACION_ALMACEN').textContent = ubi || '—';
+  document.getElementById('ESTADO').textContent = est || '—';
+  document.getElementById('ULTIMA_LINEA').textContent = linea || '—';
+  document.getElementById('OBSERVACION').textContent = obs || '—';
+
+  // Antigüedad: si ingreso >= 2 años atrás → marcar
+  const cardDatos = document.getElementById('cardDatos');
+  cardDatos.classList.remove('alert-old');
+  const dIng = parseDateMaybe(fIng);
+  if (dIng){
+    const now = new Date();
+    if (yearsDiff(dIng, now) >= 2){
+      cardDatos.classList.add('alert-old');
     }
-    const urlWrap = document.getElementById('urlWrap');
-    urlWrap.innerHTML = url ? `<a href="${url}" target="_blank" rel="noreferrer">Ficha/Imagen (SharePoint)</a>` : '';
-
-    // preparar ediciones (colocamos valores actuales)
-    document.getElementById('editCantInput').value = cant || 0;
-    document.getElementById('editUbicInput').value = ubi || '';
-    document.getElementById('editEstadoInput').value = est || '';
   }
 
-  /* =========================
-     Editar campos → POST_UPDATE
-     ========================= */
-  async function postUpdate(payload){
-    const r = await fetch(CFG.POST_UPDATE_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json().catch(()=> ({}));
-  }
-  function refreshAfterUpdate(){
-    // volver a leer para mostrar el valor actualizado
-    const id = qs('id');
-    const statusEl = document.getElementById('status');
-    statusEl.style.display='block'; statusEl.textContent='Actualizando…';
-    document.getElementById('card').style.display='none';
-    setTimeout(main, 50);
+  // Imagen
+  const imgEl = document.getElementById('imgEtiqueta');
+  const imgStatus = document.getElementById('imgStatus');
+  const imgLinkWrap = document.getElementById('imgLinkWrap');
+  imgLinkWrap.innerHTML = '';
+  if (imgURL){
+    const u = normSP(imgURL);
+    imgEl.src = u;
+    imgEl.style.display = 'block';
+    imgEl.onload = ()=>{ imgStatus.textContent = ''; };
+    imgEl.onerror = ()=>{ imgEl.style.display='none'; imgStatus.textContent='No disponible'; };
+    imgLinkWrap.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
+  }else{
+    imgEl.style.display='none';
+    imgStatus.textContent='No disponible';
   }
 
-  // CANTIDAD
-  document.getElementById('editCantBtn').onclick = () => {
-    document.getElementById('editCantWrap').style.display='flex';
-  };
-  document.getElementById('cancelCantBtn').onclick = () => {
+  // preparar ediciones con valores actuales
+  document.getElementById('editCantInput').value = cant || 0;
+  document.getElementById('editUbicInput').value = ubi || '';
+  document.getElementById('editEstadoInput').value = est || '';
+}
+
+/* ====== Fetches ====== */
+async function getBobina(id){
+  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_ts=${Date.now()}`;
+  const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
+  const txt = await r.text();
+  let data; try{ data = JSON.parse(txt); } catch{ data=null; }
+  if (!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,200)}`);
+  if (!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,200)}`);
+  if (data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+  return data;
+}
+async function postUpdate(payload){
+  const r = await fetch(CFG.POST_UPDATE_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', Accept:'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
+  return t ? JSON.parseSafe?.(t) ?? t : {};
+}
+async function postDevolucion(payload){
+  const r = await fetch(CFG.POST_DEV_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', Accept:'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
+  return t ? JSON.parseSafe?.(t) ?? t : {};
+}
+
+/* ====== Main ====== */
+async function main(){
+  const id = qs('id');
+  const statusEl = document.getElementById('status');
+  if(!id){ statusEl.textContent = "Falta parámetro 'id'"; return; }
+
+  statusEl.textContent = 'Cargando ficha…';
+  try{
+    DATA = await getBobina(id);
+    render(DATA);
+    statusEl.textContent = '';
+  }catch(e){
+    statusEl.innerHTML = `<span class="err">${e?.message || 'Error al cargar'}</span>`;
+  }
+}
+
+/* ====== UI handlers (Editar) ====== */
+document.getElementById('editCantBtn').onclick = () => {
+  document.getElementById('editCantWrap').style.display='flex';
+};
+document.getElementById('cancelCantBtn').onclick = () => {
+  document.getElementById('editCantWrap').style.display='none';
+  document.getElementById('editCantStatus').textContent='';
+};
+document.getElementById('saveCantBtn').onclick = async (e) => {
+  const btn = e.currentTarget;
+  const st = document.getElementById('editCantStatus');
+  const v = Number(document.getElementById('editCantInput').value);
+  if (isNaN(v) || v < 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ CANTIDAD: v } });
+    st.innerHTML = '<span class="ok">Guardado.</span>';
+    await main();
     document.getElementById('editCantWrap').style.display='none';
-    document.getElementById('editCantStatus').textContent='';
-  };
-  document.getElementById('saveCantBtn').onclick = async (e) => {
-    const btn = e.currentTarget;
-    const v = Number(document.getElementById('editCantInput').value);
-    const id = qs('id');
-    if (isNaN(v) || v < 0){ document.getElementById('editCantStatus').innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
-    try{
-      setLoading(btn,true,'Guardando…');
-      await postUpdate({ id, updates: { CANTIDAD: v } });
-      document.getElementById('editCantStatus').innerHTML = '<span class="ok">Guardado.</span>';
-      refreshAfterUpdate();
-    }catch(err){
-      document.getElementById('editCantStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
-    }finally{ setLoading(btn,false); }
-  };
+  }catch(err){
+    st.innerHTML = `<span class="err">${err.message||err}</span>`;
+  }finally{ setLoading(btn,false); }
+};
 
-  // UBICACIÓN
-  document.getElementById('editUbicBtn').onclick = () => {
-    document.getElementById('editUbicWrap').style.display='flex';
-  };
-  document.getElementById('cancelUbicBtn').onclick = () => {
+document.getElementById('editUbicBtn').onclick = () => {
+  document.getElementById('editUbicWrap').style.display='flex';
+};
+document.getElementById('cancelUbicBtn').onclick = () => {
+  document.getElementById('editUbicWrap').style.display='none';
+  document.getElementById('editUbicStatus').textContent='';
+};
+document.getElementById('saveUbicBtn').onclick = async (e) => {
+  const btn = e.currentTarget;
+  const st = document.getElementById('editUbicStatus');
+  const v = document.getElementById('editUbicInput').value.trim();
+  if (!v){ st.innerHTML = '<span class="err">Ingresá una ubicación.</span>'; return; }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN: v } });
+    st.innerHTML = '<span class="ok">Guardado.</span>';
+    await main();
     document.getElementById('editUbicWrap').style.display='none';
-    document.getElementById('editUbicStatus').textContent='';
-  };
-  document.getElementById('saveUbicBtn').onclick = async (e) => {
-    const btn = e.currentTarget;
-    const v = document.getElementById('editUbicInput').value.trim();
-    const id = qs('id');
-    if (!v){ document.getElementById('editUbicStatus').innerHTML = '<span class="err">Ingresá una ubicación.</span>'; return; }
-    try{
-      setLoading(btn,true,'Guardando…');
-      await postUpdate({ id, updates: { UBICACION_ALMACEN: v } });
-      document.getElementById('editUbicStatus').innerHTML = '<span class="ok">Guardado.</span>';
-      refreshAfterUpdate();
-    }catch(err){
-      document.getElementById('editUbicStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
-    }finally{ setLoading(btn,false); }
-  };
+  }catch(err){
+    st.innerHTML = `<span class="err">${err.message||err}</span>`;
+  }finally{ setLoading(btn,false); }
+};
 
-  // ESTADO
-  document.getElementById('editEstadoBtn').onclick = () => {
-    document.getElementById('editEstadoWrap').style.display='flex';
-  };
-  document.getElementById('cancelEstadoBtn').onclick = () => {
+document.getElementById('editEstadoBtn').onclick = () => {
+  document.getElementById('editEstadoWrap').style.display='flex';
+};
+document.getElementById('cancelEstadoBtn').onclick = () => {
+  document.getElementById('editEstadoWrap').style.display='none';
+  document.getElementById('editEstadoStatus').textContent='';
+};
+document.getElementById('saveEstadoBtn').onclick = async (e) => {
+  const btn = e.currentTarget;
+  const st = document.getElementById('editEstadoStatus');
+  const v = document.getElementById('editEstadoInput').value;
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ ESTADO: v } });
+    st.innerHTML = '<span class="ok">Guardado.</span>';
+    await main();
     document.getElementById('editEstadoWrap').style.display='none';
-    document.getElementById('editEstadoStatus').textContent='';
-  };
-  document.getElementById('saveEstadoBtn').onclick = async (e) => {
-    const btn = e.currentTarget;
-    const v = document.getElementById('editEstadoInput').value;
-    const id = qs('id');
-    try{
-      setLoading(btn,true,'Guardando…');
-      await postUpdate({ id, updates: { ESTADO: v } });
-      document.getElementById('editEstadoStatus').innerHTML = '<span class="ok">Guardado.</span>';
-      refreshAfterUpdate();
-    }catch(err){
-      document.getElementById('editEstadoStatus').innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
-    }finally{ setLoading(btn,false); }
-  };
+  }catch(err){
+    st.innerHTML = `<span class="err">${err.message||err}</span>`;
+  }finally{ setLoading(btn,false); }
+};
 
-  /* =========================
-     Devoluciones → POST_DEVOLUCION
-     ========================= */
-  async function postDevolucion(payload){
-    const r = await fetch(CFG.POST_DEV_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json().catch(()=> ({}));
-  }
-  document.getElementById('sendDevBtn').onclick = async (e) => {
-    const btn = e.currentTarget;
-    const id = qs('id');
-    const cantidad = Number(document.getElementById('devCant').value);
-    const linea = document.getElementById('devLinea').value;
-    const usuario = document.getElementById('devUsuario').value.trim();
-    const observacion = document.getElementById('devObs').value.trim();
+/* ====== Devolución ====== */
+document.getElementById('sendDevBtn').onclick = async (e) => {
+  const btn = e.currentTarget;
+  const st = document.getElementById('devStatus');
+  const cantidad = Number(document.getElementById('devCant').value);
+  const linea = document.getElementById('devLinea').value;
+  const usuario = document.getElementById('devUsuario').value;
+  const observacion = document.getElementById('devObs').value.trim();
+  st.textContent='';
 
-    const st = document.getElementById('devStatus');
-    st.textContent='';
+  if (isNaN(cantidad) || cantidad <= 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
+  if (!linea){ st.innerHTML = '<span class="err">Elegí una línea.</span>'; return; }
+  if (!usuario){ st.innerHTML = '<span class="err">Elegí un usuario.</span>'; return; }
 
-    if (isNaN(cantidad) || cantidad <= 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
-    if (!linea){ st.innerHTML = '<span class="err">Elegí una línea.</span>'; return; }
-    if (!usuario){ st.innerHTML = '<span class="err">Ingresá el usuario.</span>'; return; }
+  try{
+    setLoading(btn,true,'Enviando…');
+    await postDevolucion({ id: qs('id'), cantidad_devuelta: cantidad, linea, observacion, usuario });
+    st.innerHTML = '<span class="ok">Devolución registrada.</span>';
+    // limpiar inputs
+    document.getElementById('devCant').value='';
+    document.getElementById('devLinea').value='';
+    document.getElementById('devUsuario').value='';
+    document.getElementById('devObs').value='';
+    await main();
+  }catch(err){
+    st.innerHTML = `<span class="err">${err.message||err}</span>`;
+  }finally{ setLoading(btn,false); }
+};
 
-    try{
-      setLoading(btn,true,'Enviando…');
-      await postDevolucion({
-        id,
-        cantidad_devuelta: cantidad,
-        linea,
-        observacion,
-        usuario
-      });
-      st.innerHTML = '<span class="ok">Devolución registrada.</span>';
-      // limpiar inputs
-      document.getElementById('devCant').value='';
-      document.getElementById('devLinea').value='';
-      document.getElementById('devUsuario').value='';
-      document.getElementById('devObs').value='';
-      // refrescar ficha
-      refreshAfterUpdate();
-    }catch(err){
-      st.innerHTML = `<span class="err">Error: ${err.message||err}</span>`;
-    }finally{ setLoading(btn,false); }
-  };
-
-  // Go!
-  main();
+/* Go */
+main();
 </script>
 </body>
 </html>
