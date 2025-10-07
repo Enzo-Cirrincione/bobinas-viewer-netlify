@@ -1,13 +1,11 @@
-const buildCorsHeaders = () => ({
+const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
-});
+};
 
 module.exports.handler = async (event) => {
-  const CORS = buildCorsHeaders();
-
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS, body: '' };
   }
@@ -20,10 +18,39 @@ module.exports.handler = async (event) => {
       return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'CONFIG', message: 'Falta FLOW_POST_DEV_URL o CLIENT_KEY' }) };
     }
 
-    const input = event.body ? JSON.parse(event.body) : {};
+    let input = {};
+    try { input = event.body ? JSON.parse(event.body) : {}; }
+    catch {
+      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'bad_request', message: 'Body no es JSON válido' }) };
+    }
 
+    // Normalizamos nombres que puedan venir del viewer
+    const id       = input.id ?? input.ID ?? input.Id;
+    const cant     = input.cantidad_devolucion ?? input.cantidad_devuelta ?? input.CANTIDAD_DEVOLUCION ?? input?.updates?.CANTIDAD_DEVOLUCION;
+    const linea    = input.linea ?? input.LINEA ?? input?.updates?.LINEA;
+    const usuario  = input.usuario ?? input.USUARIO ?? input?.updates?.USUARIO ?? 'netlify';
+    const obs      = input.observacion ?? input.OBSERVACION ?? input?.updates?.OBSERVACION ?? '';
+
+    if (!id || cant == null || !linea) {
+      return {
+        statusCode: 400,
+        headers: CORS,
+        body: JSON.stringify({
+          error: 'bad_request',
+          message: 'Faltan campos requeridos',
+          required: ['id','cantidad_devolucion','linea'],
+          got: { id, cant, linea, usuario, obs }
+        })
+      };
+    }
+
+    // Payload EXACTO que espera el Flow
     const payload = {
-      ...input,
+      id,
+      cantidad_devolucion: Number(cant),  // 👈 nombre correcto
+      linea,
+      observacion: obs,
+      usuario,
       api_key: input.api_key || CLIENT_KEY,
       client_key: input.client_key || CLIENT_KEY
     };
@@ -40,5 +67,6 @@ module.exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: 'proxy_error', message: e?.message || 'Error' }) };
   }
 };
+
 
 
