@@ -100,8 +100,12 @@
   /* Inputs */
   .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
   textarea{ resize:vertical }
-  .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-  /* Alinear ediciones inline bajo el valor dentro del .field */
+
+  /* Edición inline: por defecto CERRADA */
+  .inline-edit{ display:none; gap:8px; align-items:center; flex-wrap:wrap }
+  /* Abierta cuando tiene .is-open */
+  .inline-edit.is-open{ display:flex; }
+  /* Alinear bloque de edición bajo el valor en .field */
   .inline-edit[data-align="field"]{ grid-column: 2 / -1; }
 
   /* Media */
@@ -178,7 +182,7 @@
           <span id="CANTIDAD" class="qty-value skeleton" data-skel aria-live="polite"></span>
           <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
         </div>
-        <div id="editCantWrap" class="inline-edit" data-align="field" hidden>
+        <div id="editCantWrap" class="inline-edit" data-align="field">
           <label for="editCantInput" class="k" style="min-width:unset">Nueva cantidad</label>
           <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
           <button id="saveCantBtn" class="btn" type="button">Guardar</button>
@@ -197,7 +201,7 @@
         <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editUbicBtn" type="button" aria-expanded="false" aria-controls="editUbicWrap">Editar</button>
       </div>
-      <div id="editUbicWrap" class="inline-edit" data-align="field" hidden>
+      <div id="editUbicWrap" class="inline-edit" data-align="field">
         <label for="editUbicInput" class="k" style="min-width:unset">Nueva ubicación</label>
         <input id="editUbicInput" class="input" type="text" />
         <button id="saveUbicBtn" class="btn" type="button">Guardar</button>
@@ -210,7 +214,7 @@
         <span id="ESTADO" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editEstadoBtn" type="button" aria-expanded="false" aria-controls="editEstadoWrap">Editar</button>
       </div>
-      <div id="editEstadoWrap" class="inline-edit" data-align="field" hidden>
+      <div id="editEstadoWrap" class="inline-edit" data-align="field">
         <label for="editEstadoInput" class="k" style="min-width:unset">Estado</label>
         <select id="editEstadoInput" class="input">
           <option value="">—</option>
@@ -448,16 +452,17 @@ async function main(){
   finally{ toggleSkeleton(false); }
 }
 
-/* ====== accessibility helpers for toggles ====== */
+/* ====== toggles (abrir/cerrar por clase) ====== */
 function toggleBlock(btnId, wrapId){
-  const btn = document.getElementById(btnId); const wrap = document.getElementById(wrapId);
-  if(!btn || !wrap) return; const open = wrap.hasAttribute('hidden');
-  if(open){
-    wrap.removeAttribute('hidden'); btn.setAttribute('aria-expanded','true');
+  const btn = document.getElementById(btnId);
+  const wrap = document.getElementById(wrapId);
+  if(!btn || !wrap) return;
+  const willOpen = !wrap.classList.contains('is-open');
+  wrap.classList.toggle('is-open', willOpen);
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  if (willOpen){
     const first = wrap.querySelector('input,select,textarea,button');
-    if(first){ setTimeout(()=>{ first.focus(); if(first.select) first.select(); }, 0); }
-  } else {
-    wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false');
+    if(first){ setTimeout(()=>{ first.focus(); first.select && first.select(); }, 0); }
   }
 }
 
@@ -465,29 +470,29 @@ function toggleBlock(btnId, wrapId){
 const E = (id)=>document.getElementById(id);
 
 E('editCantBtn').onclick = ()=> toggleBlock('editCantBtn','editCantWrap');
-E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').setAttribute('hidden',''); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
+E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
 E('saveCantBtn').onclick = async (ev)=>{
   const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
   if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').setAttribute('hidden',''); E('editCantBtn').setAttribute('aria-expanded','false'); }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false'); }
   catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
   finally{ setLoading(ev.currentTarget,false); }
 };
 
 E('editUbicBtn').onclick = ()=> toggleBlock('editUbicBtn','editUbicWrap');
-E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').setAttribute('hidden',''); E('editUbicBtn').setAttribute('aria-expanded','false'); E('editUbicStatus').textContent=''; };
+E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false'); E('editUbicStatus').textContent=''; };
 E('saveUbicBtn').onclick = async (ev)=>{
   const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim(); if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').setAttribute('hidden',''); E('editUbicBtn').setAttribute('aria-expanded','false'); }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false'); }
   catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
   finally{ setLoading(ev.currentTarget,false); }
 };
 
 E('editEstadoBtn').onclick = ()=> toggleBlock('editEstadoBtn','editEstadoWrap');
-E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').setAttribute('hidden',''); E('editEstadoBtn').setAttribute('aria-expanded','false'); E('editEstadoStatus').textContent=''; };
+E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false'); E('editEstadoStatus').textContent=''; };
 E('saveEstadoBtn').onclick = async (ev)=>{
   const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').setAttribute('hidden',''); E('editEstadoBtn').setAttribute('aria-expanded','false'); }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false'); }
   catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
   finally{ setLoading(ev.currentTarget,false); }
 };
@@ -522,23 +527,18 @@ E('sendDevBtn').onclick = async (ev)=>{
 })();
 
 /* go */
-function initVisibility(){
-  const pairs = [
-    ['editCantBtn','editCantWrap'],
-    ['editUbicBtn','editUbicWrap'],
-    ['editEstadoBtn','editEstadoWrap']
-  ];
-  for(const [btnId,wrapId] of pairs){
-    const btn=document.getElementById(btnId); const wrap=document.getElementById(wrapId);
-    if(wrap && !wrap.hasAttribute('hidden')) wrap.setAttribute('hidden','');
-    if(btn) btn.setAttribute('aria-expanded','false');
-  }
-}
-initVisibility();
+(function ensureClosedOnLoad(){
+  // Cerrar explícitamente todos los paneles al cargar
+  ['editCantWrap','editUbicWrap','editEstadoWrap'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('is-open');
+  });
+})();
 main();
 </script>
 </body>
 </html>
+
 
 
 
