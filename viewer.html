@@ -230,6 +230,16 @@ function toggleSkeleton(on=true){
 }
 
 /* ====== estado ====== */
+function normalizeEstado(s){
+  if (s == null) return '';
+  const t = String(s).trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // saca tildes
+  if (['ALMACEN','ALMACEN ', 'DEPOSITO','DEPOSITO ', 'DEPÓSITO'].includes(t)) return 'ALMACEN';
+  if (['LINEA','EN LINEA','EN LINEA ', 'LÍNEA'].includes(t)) return 'LINEA';
+  if (['BAJA','Baja','BAJA '].includes(t)) return 'BAJA';
+  return String(s).trim(); // deja el valor original si no coincide
+}
+
 let DATA = {};
 
 /* ====== render ====== */
@@ -243,7 +253,34 @@ function render(d){
   const cant   = g('CANTIDAD');
   const prov   = g('PROVEEDOR');
   const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
-  const est    = g('ESTADO');
+  // ESTADO: texto y select sincronizados
+const estRaw  = g('ESTADO');
+const estNorm = normalizeEstado(estRaw);
+
+// texto de la ficha (muestra lo que trae la base tal cual)
+const estTxtEl = document.getElementById('ESTADO');
+if (estTxtEl){ estTxtEl.textContent = estRaw ? String(estRaw) : '—'; estTxtEl.classList.remove('skeleton'); }
+
+// select: si coincide con una opción conocida, usarla; si no, agregar opción ad-hoc
+const sel = document.getElementById('editEstadoInput');
+if (sel){
+  // ¿existe una opción exactamente igual a estNorm?
+  const hasNorm = Array.from(sel.options).some(o => o.value === estNorm);
+  if (estNorm && hasNorm){
+    sel.value = estNorm;
+  } else if (estRaw) {
+    // si vino un estado no estándar, lo mostramos igual
+    let opt = Array.from(sel.options).find(o => o.value === String(estRaw).trim());
+    if (!opt){
+      opt = new Option(String(estRaw).trim(), String(estRaw).trim());
+      sel.add(opt);
+    }
+    sel.value = opt.value;
+  } else {
+    sel.value = ''; // sin estado
+  }
+}
+
   const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
   const linea  = g('ULTIMA_LINEA',['LINEA']);
   const obs    = g('OBSERVACION',['OBSERVACIÓN']);
