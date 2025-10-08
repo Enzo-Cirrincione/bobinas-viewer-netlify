@@ -3,84 +3,61 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Ficha bobina</title>
+<title>Ficha de bobina</title>
 <meta name="color-scheme" content="light dark" />
 <style>
   :root{
-    --bg:#0b0e14; --card:#111520; --muted:#97a3b6; --text:#e6edf6; --accent:#4f46e5;
-    --ok:#16a34a; --err:#ef4444; --warn:#ef4444; --border:#1c2233; --shadow:0 10px 30px rgba(0,0,0,.35);
-    --radius:16px;
+    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
+    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
+    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35); --radius:16px;
   }
   @media (prefers-color-scheme: light){
     :root{
-      --bg:#f7f8fb; --card:#ffffff; --muted:#64748b; --text:#0f172a; --accent:#4f46e5;
-      --ok:#16a34a; --err:#dc2626; --warn:#dc2626; --border:#e5e7eb; --shadow:0 10px 30px rgba(2,6,23,.08);
+      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
+      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
+      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
     }
   }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
-  body{ margin:0; padding:16px; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
-  .wrap{ max-width:900px; margin:0 auto; display:grid; gap:14px }
-  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px }
-  .title{ margin:0 0 8px; font-size:20px; font-weight:900; display:flex; align-items:center; gap:10px }
-  .subtitle{ margin:0 0 10px; font-weight:800; font-size:16px; color:var(--muted) }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
+  .wrap{ max-width:980px; margin:0 auto; padding:18px; display:grid; gap:16px; }
+  .card{ background:linear-gradient(180deg, var(--card) 0%, var(--card2) 100%); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+  .title{ margin:0 0 4px; font-size:22px; font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px }
+  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
   .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
-  .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  .grid{ display:grid; gap:10px }
-  .k{ color:var(--muted); min-width:150px; display:inline-block }
-  .code-big{ font-size:22px; font-weight:900; letter-spacing:.3px }
-  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:var(--accent); color:#fff; font-weight:800; cursor:pointer }
-  .btn-ghost{ padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
+  .k{ color:var(--muted); min-width:140px; display:inline-block; }
+  .code-big{ font-weight:900; font-size:22px; letter-spacing:.3px }
+  .grid{ display:grid; gap:12px }
+  .field{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .field-col{ display:grid; gap:12px }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 6px 20px rgba(79,70,229,.25) }
+  .btn-ghost{ padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
   .btn[disabled]{ opacity:.6; cursor:not-allowed }
-  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px }
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
   textarea{ resize:vertical }
   .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-  .imgwrap{ display:grid; gap:8px }
   .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
-  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; }
-  details > summary{ list-style:none; cursor:pointer; user-select:none; }
+  details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
   details > summary::-webkit-details-marker{ display:none; }
   .caret{ transition:transform .2s ease; display:inline-block }
   details[open] .caret{ transform:rotate(90deg) }
-  .alert-old{ outline:2px solid var(--warn); box-shadow:0 0 0 4px color-mix(in oklab, var(--warn) 15%, transparent) }
+  .alert-warn{ outline:2px solid var(--err); box-shadow:0 0 0 5px color-mix(in oklab, var(--err) 18%, transparent) }
+  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 7px color-mix(in oklab, var(--err) 28%, transparent) }
+
+  /* Skeleton */
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+
   @media (max-width:640px){
     .k{ min-width:120px }
     .code-big{ font-size:20px }
+    .title{ font-size:20px }
   }
-/* --- layout vertical + responsive --- */
-.field-col { display:grid; gap:10px; }
-@media (min-width: 760px){
-  .field-col { grid-template-columns: 1fr; }
-}
-
-/* filas estándar */
-.field { display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-.field .k { color:var(--muted); min-width:150px; display:inline-block }
-
-/* alertas */
-.alert-warn{ outline:2px solid var(--warn);
-  box-shadow:0 0 0 4px color-mix(in oklab, var(--warn) 15%, transparent) }
-.alert-danger{ outline:3px solid var(--err);
-  box-shadow:0 0 0 6px color-mix(in oklab, var(--err) 20%, transparent) }
-
-/* --- skeleton (shimmer) --- */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.skeleton{
-  position:relative; color:transparent !important;
-  border-radius:8px; min-height:18px;
-  background:linear-gradient(90deg,
-    rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-  background-size: 400% 100%; animation: shimmer 1.2s infinite linear;
-}
-.skel-img{
-  border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
-  background:linear-gradient(90deg,
-    rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-  background-size:400% 100%; animation: shimmer 1.2s infinite linear;
-}
-
 </style>
 </head>
 <body>
@@ -94,34 +71,41 @@
     </h1>
 
     <div class="grid">
-      <div><span class="k">CÓDIGO:</span> <span id="CODIGO" class="code-big"></span></div>
-      <div><span class="k">DESCRIPCIÓN:</span> <span id="DESCRIPCION"></span></div>
-    <div class="field-col">
       <div class="field">
-      <span class="k">INGRESO:</span>
-      <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
+        <span class="k">CÓDIGO:</span>
+        <span id="CODIGO" class="code-big skeleton" data-skel></span>
       </div>
-    <div class="field">
-      <span class="k">PROVEEDOR:</span>
-      <span id="PROVEEDOR" class="skeleton" data-skel></span>
-      </div>
-    <div class="field">
-      <span class="k">CANTIDAD:</span>
-      <span id="CANTIDAD" class="skeleton" data-skel></span>
-      <button class="btn-ghost" id="editCantBtn">Editar</button>
-      </div>
-    </div>
-      <!-- EDITAR CANTIDAD -->
-      <div id="editCantWrap" class="inline-edit" style="display:none">
-        <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
-        <button id="saveCantBtn" class="btn">Guardar</button>
-        <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
-        <span id="editCantStatus" class="muted"></span>
+      <div class="field">
+        <span class="k">DESCRIPCIÓN:</span>
+        <span id="DESCRIPCION" class="skeleton" data-skel></span>
       </div>
 
-      <!-- EDITAR UBICACIÓN -->
-      <div>
-        <span class="k">UBICACIÓN:</span> <span id="UBICACION_ALMACEN"></span>
+      <!-- vertical: ingreso / cantidad / proveedor -->
+      <div class="field-col">
+        <div class="field">
+          <span class="k">INGRESO:</span>
+          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
+        </div>
+        <div class="field">
+          <span class="k">CANTIDAD:</span>
+          <span id="CANTIDAD" class="skeleton" data-skel></span>
+          <button class="btn-ghost" id="editCantBtn">Editar</button>
+        </div>
+        <div id="editCantWrap" class="inline-edit" style="display:none">
+          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
+          <button id="saveCantBtn" class="btn">Guardar</button>
+          <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
+          <span id="editCantStatus" class="muted"></span>
+        </div>
+        <div class="field">
+          <span class="k">PROVEEDOR:</span>
+          <span id="PROVEEDOR" class="skeleton" data-skel></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="k">UBICACIÓN:</span>
+        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editUbicBtn">Editar</button>
       </div>
       <div id="editUbicWrap" class="inline-edit" style="display:none">
@@ -131,9 +115,9 @@
         <span id="editUbicStatus" class="muted"></span>
       </div>
 
-      <!-- EDITAR ESTADO -->
-      <div>
-        <span class="k">ESTADO:</span> <span id="ESTADO"></span>
+      <div class="field">
+        <span class="k">ESTADO:</span>
+        <span id="ESTADO" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editEstadoBtn">Editar</button>
       </div>
       <div id="editEstadoWrap" class="inline-edit" style="display:none">
@@ -148,32 +132,35 @@
         <span id="editEstadoStatus" class="muted"></span>
       </div>
 
-      <!-- VER MÁS -->
-      <details id="detalles">
-        <summary class="row"><span class="caret">▶</span> <b>Ver más</b></summary>
+      <!-- Ver más -->
+      <details>
+        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
         <div class="grid" style="margin-top:8px">
-          <div><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION"></span></div>
-          <div><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA"></span></div>
-          <div><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION"></span></div>
+          <div class="field"><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION" class="skeleton" data-skel></span></div>
         </div>
       </details>
     </div>
   </section>
 
   <!-- FICHA IMAGEN -->
-  <section class="card imgwrap">
+  <section class="card">
     <h2 class="title">Imagen</h2>
-    <div id="imgStatus" class="muted">Cargando imagen…</div>
+    <div id="imgSkel" class="skel-img"></div>
     <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" style="display:none" loading="lazy" referrerpolicy="no-referrer" />
-    <div id="imgLinkWrap"></div>
+    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
+    <div id="imgLinkWrap" style="margin-top:6px"></div>
   </section>
 
   <!-- FICHA DEVOLUCIÓN -->
   <section class="card">
     <h2 class="title">Cargar devolución</h2>
     <div class="grid" style="gap:10px">
-      <div class="row">
+      <div class="field">
         <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
+      </div>
+      <div class="field">
         <select id="devLinea" class="input" aria-label="Línea">
           <option value="">Línea…</option>
           <option value="L0">L0</option>
@@ -182,7 +169,7 @@
           <option value="TM">TM</option>
         </select>
       </div>
-      <div class="row">
+      <div class="field">
         <select id="devUsuario" class="input" aria-label="Usuario">
           <option value="">Usuario…</option>
           <option>Noe</option>
@@ -192,17 +179,18 @@
           <option>Cande</option>
         </select>
       </div>
-      <div class="row">
+      <div class="field">
         <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
       </div>
-      <div class="row">
+      <div class="field">
         <button id="sendDevBtn" class="btn">Enviar devolución</button>
         <span id="devStatus" class="muted"></span>
       </div>
     </div>
   </section>
 
-  <div id="status" class="muted"></div>
+  <!-- estado global -->
+  <div id="status" class="muted" style="display:none"></div>
 </div>
 
 <script>
@@ -215,324 +203,189 @@
     POST_DEV_URL:     '/api/devolucion'// HTTP POST
   };
 
-/* ====== Utilidades ====== */
+/* ====== helpers ====== */
 const qs = (n)=>new URLSearchParams(location.search).get(n);
-function excelSerialToDMY(v){
-  const n = Number(v);
-  if (!isFinite(n) || n<=0) return (v||'');
-  // Excel base: 1899-12-30
-  const d = new Date(Math.round((n - 25569) * 86400 * 1000));
-  const dd = String(d.getDate()).padStart(2,'0');
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const yy = d.getFullYear();
-  return `${dd}/${mm}/${yy}`;
+function showStatus(msg, isError=false){
+  const el = document.getElementById('status'); if(!el) return;
+  el.style.display='block'; el.innerHTML = isError ? `<span class="err">${msg}</span>` : msg;
 }
-function parseDateMaybe(serialOrIso){
-  // vuelve Date si puede; si no, null
-  if (serialOrIso == null || serialOrIso === '') return null;
-  if (/^\d+(\.\d+)?$/.test(String(serialOrIso))) {
-    const n = Number(serialOrIso);
-    const t = Math.round((n - 25569) * 86400 * 1000);
-    return new Date(t);
-  }
-  const d = new Date(serialOrIso);
-  return isNaN(d.getTime()) ? null : d;
-}
-function yearsDiff(from, to){
-  const msYear = 365.25*24*3600*1000;
-  return (to - from)/msYear;
-}
+function hideStatus(){ const el=document.getElementById('status'); if(!el) return; el.innerHTML=''; el.style.display='none'; }
+function setLoading(btn,on,labelBusy){ if(!btn) return; if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; } else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; } }
+function excelSerialToDMY(v){ const n=Number(v); if(!isFinite(n)||n<=0) return (v||''); const d=new Date(Math.round((n-25569)*86400*1000)); const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const yy=d.getFullYear(); return `${dd}/${mm}/${yy}`; }
+function parseDateMaybe(x){ if(x==null||x==='') return null; if(/^\d+(\.\d+)?$/.test(String(x))){ const t=Math.round((Number(x)-25569)*86400*1000); return new Date(t); } const d=new Date(x); return isNaN(d)?null:d; }
+function yearsDiff(a,b){ return (b-a)/(365.25*24*3600*1000); }
+function normSP(u){ if(!u) return u; u=u.replace(/%2520/g,'%20'); try{ const url=new URL(u); if(url.pathname.startsWith('/:u:/')||url.pathname.startsWith('/:i:/')||url.pathname.startsWith('/:x:/')){ if(!url.searchParams.has('download')) url.searchParams.set('download','1'); return url.toString(); } if(url.pathname.includes('/Forms/AllItems.aspx')){ const idParam=url.searchParams.get('id'); if(idParam){ const decoded=decodeURIComponent(idParam); const base=url.origin+'/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl='; return base+encodeURIComponent(decoded); } } return u; }catch{ return u; } }
 function toggleSkeleton(on=true){
-  // textos
-  document.querySelectorAll('[data-skel]').forEach(el=>{
-    if(on){ el.classList.add('skeleton'); el.textContent = ' '; } // NBSP
-    else  { el.classList.remove('skeleton'); }
-  });
-  // imagen
-  const sk = document.getElementById('imgSkel');
-  if (sk) sk.style.display = on ? 'block' : 'none';
-}
-  
-function setLoading(btn, on, labelBusy){
-  if(!btn) return;
-  if(on){
-    btn.disabled = true;
-    btn.dataset.label = btn.textContent;
-    btn.textContent = labelBusy || 'Procesando…';
-  }else{
-    btn.disabled = false;
-    btn.textContent = btn.dataset.label || btn.textContent;
-  }
-}
-function normSP(u){
-  if(!u) return u;
-  u = u.replace(/%2520/g,'%20');
-  try{
-    const url = new URL(u);
-    if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')){
-      if (!url.searchParams.has('download')) url.searchParams.set('download','1');
-      return url.toString();
-    }
-    if (url.pathname.includes('/Forms/AllItems.aspx')){
-      const idParam = url.searchParams.get('id');
-      if (idParam){
-        const decoded = decodeURIComponent(idParam);
-        const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
-        return base + encodeURIComponent(decoded);
-      }
-    }
-    return u;
-  }catch{ return u; }
+  document.querySelectorAll('[data-skel]').forEach(el=>{ if(on){ el.classList.add('skeleton'); el.textContent=' '; } else { el.classList.remove('skeleton'); } });
+  const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
 }
 
-/* ====== Estado global ====== */
+/* ====== estado ====== */
 let DATA = {};
 
-/* ====== Render ====== */
+/* ====== render ====== */
 function render(d){
-  const get = (k,alts=[])=>{
-    if (d[k]!=null && d[k] !== '') return d[k];
-    for(const a of alts) if(d[a]!=null && d[a] !== '') return d[a];
-    return '';
-  };
+  const g=(k,alts=[])=>{ if(d[k]!=null && d[k]!=='') return d[k]; for(const a of alts) if(d[a]!=null && d[a]!=='') return d[a]; return ''; };
 
-  const idFila = get('ID_FILA');
-  const codigo = get('CODIGO',['CÓDIGO']);
-  const desc   = get('DESCRIPCION',['DESCRIPCIÓN']);
-  const cant   = get('CANTIDAD');
-  const prov   = get('PROVEEDOR');
-  const fIng   = get('FECHA_INGRESO',['FECHA INGRESO']);
-  const fDev   = get('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
-  const linea  = get('ULTIMA_LINEA',['LINEA']);
-  const ubi    = get('UBICACION_ALMACEN',['UBICACIÓN']);
-  const est    = get('ESTADO');
-  const obs    = get('OBSERVACION',['OBSERVACIÓN']);
-  const imgURL = get('IMAGEN_URL');
-  const url    = get('URL');
+  const idFila = g('ID_FILA');
+  const codigo = g('CODIGO',['CÓDIGO']);
+  const desc   = g('DESCRIPCION',['DESCRIPCIÓN']);
+  const fIng   = g('FECHA_INGRESO',['FECHA INGRESO']);
+  const cant   = g('CANTIDAD');
+  const prov   = g('PROVEEDOR');
+  const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
+  const est    = g('ESTADO');
+  const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
+  const linea  = g('ULTIMA_LINEA',['LINEA']);
+  const obs    = g('OBSERVACION',['OBSERVACIÓN']);
+  const imgURL = g('IMAGEN_URL');
 
-  // Título / badge
-  document.getElementById('badgeId').textContent = `ID: ${idFila||'—'}`;
+  // título
+  const badge = document.getElementById('badgeId'); if(badge) badge.textContent = `ID: ${idFila||'—'}`;
 
-  // Campos
-  document.getElementById('CODIGO').textContent = codigo || '—';
-  document.getElementById('DESCRIPCION').textContent = desc || '—';
-  // fechas formateadas DD/MM/AAAA (si vienen serial)
-  document.getElementById('FECHA_INGRESO').textContent = (/^\d+(\.\d+)?$/.test(String(fIng))) ? excelSerialToDMY(fIng) : (fIng || '—');
-  document.getElementById('FECHA_DEVOLUCION').textContent = (/^\d+(\.\d+)?$/.test(String(fDev))) ? excelSerialToDMY(fDev) : (fDev || '—');
+  // básicos
+  const setTxt = (id,val)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = val; el.classList.remove('skeleton'); };
+  setTxt('CODIGO', codigo||'—');
+  setTxt('DESCRIPCION', desc||'—');
+  setTxt('CANTIDAD', (cant??'')===''?'—':String(cant));
+  setTxt('PROVEEDOR', prov||'—');
+  setTxt('UBICACION_ALMACEN', ubi||'—');
+  setTxt('ESTADO', est||'—');
+  setTxt('ULTIMA_LINEA', linea||'—');
+  setTxt('OBSERVACION', obs||'—');
 
-  document.getElementById('CANTIDAD').textContent = (cant ?? '') === '' ? '—' : String(cant);
-  document.getElementById('PROVEEDOR').textContent = prov || '—';
-  document.getElementById('UBICACION_ALMACEN').textContent = ubi || '—';
-  document.getElementById('ESTADO').textContent = est || '—';
-  document.getElementById('ULTIMA_LINEA').textContent = linea || '—';
-  document.getElementById('OBSERVACION').textContent = obs || '—';
+  // fechas
+  const fmt = v => (/^\d+(\.\d+)?$/.test(String(v))) ? excelSerialToDMY(v) : (v||'—');
+  setTxt('FECHA_INGRESO', fmt(fIng));
+  setTxt('FECHA_DEVOLUCION', fmt(fDev));
 
-  // Antigüedad: si ingreso >= 2 años atrás → marcar
-  // Antigüedad + estado
-  const cardDatos = document.getElementById('cardDatos');
-  cardDatos.classList.remove('alert-warn','alert-danger');
-
-  const dIng = parseDateMaybe(fIng);
-  if (String(est).toUpperCase() === 'BAJA') {
-    cardDatos.classList.add('alert-danger');      // rojo fuerte por baja
-  } else if (dIng){
-   const now = new Date();
-   if (yearsDiff(dIng, now) >= 2){
-    cardDatos.classList.add('alert-warn');      // rojo tenue por antigüedad
-   }
+  // alertas: BAJA (fuerte) / antigüedad (tenue)
+  const card = document.getElementById('cardDatos');
+  if(card){ card.classList.remove('alert-warn','alert-danger');
+    if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
+    else { const di=parseDateMaybe(fIng); if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); } }
   }
 
-
-  // Imagen
+  // imagen con skeleton
   const imgEl = document.getElementById('imgEtiqueta');
+  const imgSk = document.getElementById('imgSkel');
   const imgStatus = document.getElementById('imgStatus');
-  const imgLinkWrap = document.getElementById('imgLinkWrap');
-  const imgSkel = document.getElementById('imgSkel');
+  const linkW = document.getElementById('imgLinkWrap');
+  if(linkW) linkW.innerHTML = '';
+  if(imgStatus) imgStatus.textContent = '';
 
-  imgLinkWrap.innerHTML = '';
-  imgStatus.textContent = '';
-
-  if (imgURL){
-   const u = normSP(imgURL);
-   imgSkel.style.display = 'block';
-   imgEl.style.display = 'none';
-   imgEl.onload = ()=>{
-    imgSkel.style.display = 'none';
-    imgEl.style.display = 'block';
-    imgStatus.textContent = '';
-    };
-    imgEl.onerror = ()=>{
-    imgSkel.style.display = 'none';
-    imgEl.style.display = 'none';
-    imgStatus.textContent = 'No disponible';
-    };
+  if (imgURL && imgEl){
+    const u = normSP(imgURL);
+    if(imgSk) imgSk.style.display='block';
+    imgEl.style.display='none';
+    imgEl.onload = ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='block'; if(imgStatus) imgStatus.textContent=''; };
+    imgEl.onerror= ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='none'; if(imgStatus) imgStatus.textContent='No disponible'; };
     imgEl.src = u;
-    imgLinkWrap.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
-    }else{
-     imgSkel.style.display = 'none';
-     imgEl.style.display = 'none';
-     imgStatus.textContent = 'No disponible';
-     }
+    if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
+  }else{
+    if(imgSk) imgSk.style.display='none';
+    if(imgEl) imgEl.style.display='none';
+    if(imgStatus) imgStatus.textContent='No disponible';
+  }
 
-  // preparar ediciones con valores actuales
-  document.getElementById('editCantInput').value = cant || 0;
-  document.getElementById('editUbicInput').value = ubi || '';
-  document.getElementById('editEstadoInput').value = est || '';
+  // preparar inputs
+  const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
+  const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
+  const ie=document.getElementById('editEstadoInput'); if(ie) ie.value = est || '';
 }
 
-/* ====== Fetches ====== */
+/* ====== fetch ====== */
 async function getBobina(id){
-  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_ts=${Date.now()}`;
+  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_=${Date.now()}`;
   const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
   const txt = await r.text();
-  let data; try{ data = JSON.parse(txt); } catch{ data=null; }
-  if (!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,200)}`);
-  if (!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,200)}`);
-  if (data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+  let data; try{ data=JSON.parse(txt) }catch{ data=null }
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,220)}`);
+  if(!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,220)}`);
+  if(data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
   return data;
 }
 async function postUpdate(payload){
-  const r = await fetch(CFG.POST_UPDATE_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', Accept:'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
-  return t ? JSON.parseSafe?.(t) ?? t : {};
+  const r = await fetch(CFG.POST_UPDATE_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 async function postDevolucion(payload){
-  const r = await fetch(CFG.POST_DEV_URL, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json', Accept:'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,200)}`);
-  return t ? JSON.parseSafe?.(t) ?? t : {};
+  const r = await fetch(CFG.POST_DEV_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 
-/* ====== Main ====== */
+/* ====== main ====== */
 async function main(){
-  const id = qs('id');
-  const statusEl = document.getElementById('status');
-  if(!id){ statusEl.textContent = "Falta parámetro 'id'"; return; }
-
-  toggleSkeleton(true);                         // <<< NUEVO
-  statusEl.textContent = 'Cargando ficha…';
-
-  try{
-    DATA = await getBobina(id);
-    render(DATA);
-    statusEl.textContent = '';
-  }catch(e){
-    statusEl.innerHTML = `<span class="err">${e?.message || 'Error al cargar'}</span>`;
-  }finally{
-    toggleSkeleton(false);                      // <<< NUEVO
-  }
+  const id = qs('id'); if(!id){ showStatus("Falta parámetro 'id'", true); return; }
+  toggleSkeleton(true); showStatus('Cargando ficha…');
+  try{ DATA = await getBobina(id); render(DATA); hideStatus(); }
+  catch(e){ showStatus(e?.message||'Error al cargar', true); }
+  finally{ toggleSkeleton(false); }
 }
 
+/* ====== eventos (editar/guardar) ====== */
+const E = (id)=>document.getElementById(id);
 
-/* ====== UI handlers (Editar) ====== */
-document.getElementById('editCantBtn').onclick = () => {
-  document.getElementById('editCantWrap').style.display='flex';
-};
-document.getElementById('cancelCantBtn').onclick = () => {
-  document.getElementById('editCantWrap').style.display='none';
-  document.getElementById('editCantStatus').textContent='';
-};
-document.getElementById('saveCantBtn').onclick = async (e) => {
-  const btn = e.currentTarget;
-  const st = document.getElementById('editCantStatus');
-  const v = Number(document.getElementById('editCantInput').value);
-  if (isNaN(v) || v < 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ CANTIDAD: v } });
-    st.innerHTML = '<span class="ok">Guardado.</span>';
-    await main();
-    document.getElementById('editCantWrap').style.display='none';
-  }catch(err){
-    st.innerHTML = `<span class="err">${err.message||err}</span>`;
-  }finally{ setLoading(btn,false); }
+E('editCantBtn').onclick = ()=>{ E('editCantWrap').style.display='flex'; };
+E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').style.display='none'; E('editCantStatus').textContent=''; };
+E('saveCantBtn').onclick = async (ev)=>{
+  const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
+  if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
-document.getElementById('editUbicBtn').onclick = () => {
-  document.getElementById('editUbicWrap').style.display='flex';
-};
-document.getElementById('cancelUbicBtn').onclick = () => {
-  document.getElementById('editUbicWrap').style.display='none';
-  document.getElementById('editUbicStatus').textContent='';
-};
-document.getElementById('saveUbicBtn').onclick = async (e) => {
-  const btn = e.currentTarget;
-  const st = document.getElementById('editUbicStatus');
-  const v = document.getElementById('editUbicInput').value.trim();
-  if (!v){ st.innerHTML = '<span class="err">Ingresá una ubicación.</span>'; return; }
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN: v } });
-    st.innerHTML = '<span class="ok">Guardado.</span>';
-    await main();
-    document.getElementById('editUbicWrap').style.display='none';
-  }catch(err){
-    st.innerHTML = `<span class="err">${err.message||err}</span>`;
-  }finally{ setLoading(btn,false); }
+E('editUbicBtn').onclick = ()=>{ E('editUbicWrap').style.display='flex'; };
+E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').style.display='none'; E('editUbicStatus').textContent=''; };
+E('saveUbicBtn').onclick = async (ev)=>{
+  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim(); if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
-document.getElementById('editEstadoBtn').onclick = () => {
-  document.getElementById('editEstadoWrap').style.display='flex';
-};
-document.getElementById('cancelEstadoBtn').onclick = () => {
-  document.getElementById('editEstadoWrap').style.display='none';
-  document.getElementById('editEstadoStatus').textContent='';
-};
-document.getElementById('saveEstadoBtn').onclick = async (e) => {
-  const btn = e.currentTarget;
-  const st = document.getElementById('editEstadoStatus');
-  const v = document.getElementById('editEstadoInput').value;
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ ESTADO: v } });
-    st.innerHTML = '<span class="ok">Guardado.</span>';
-    await main();
-    document.getElementById('editEstadoWrap').style.display='none';
-  }catch(err){
-    st.innerHTML = `<span class="err">${err.message||err}</span>`;
-  }finally{ setLoading(btn,false); }
+E('editEstadoBtn').onclick = ()=>{ E('editEstadoWrap').style.display='flex'; };
+E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').style.display='none'; E('editEstadoStatus').textContent=''; };
+E('saveEstadoBtn').onclick = async (ev)=>{
+  const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
-/* ====== Devolución ====== */
-document.getElementById('sendDevBtn').onclick = async (e) => {
-  const btn = e.currentTarget;
-  const st = document.getElementById('devStatus');
-  const cantidad = Number(document.getElementById('devCant').value);
-  const linea = document.getElementById('devLinea').value;
-  const usuario = document.getElementById('devUsuario').value;
-  const observacion = document.getElementById('devObs').value.trim();
-  st.textContent='';
-
-  if (isNaN(cantidad) || cantidad <= 0){ st.innerHTML = '<span class="err">Cantidad inválida.</span>'; return; }
-  if (!linea){ st.innerHTML = '<span class="err">Elegí una línea.</span>'; return; }
-  if (!usuario){ st.innerHTML = '<span class="err">Elegí un usuario.</span>'; return; }
+/* ====== devolución ====== */
+E('sendDevBtn').onclick = async (ev)=>{
+  const st=E('devStatus'); st.textContent='';
+  const cantidad = Number(E('devCant').value);
+  const linea = E('devLinea').value;
+  const usuario = E('devUsuario').value;
+  const observacion = (E('devObs').value||'').trim();
+  if(isNaN(cantidad)||cantidad<=0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  if(!linea){ st.innerHTML='<span class="err">Elegí una línea.</span>'; return; }
+  if(!usuario){ st.innerHTML='<span class="err">Elegí un usuario.</span>'; return; }
 
   try{
-    setLoading(btn,true,'Enviando…');
-    await postDevolucion({ id: qs('id'), cantidad_devuelta: cantidad, linea, observacion, usuario });
-    st.innerHTML = '<span class="ok">Devolución registrada.</span>';
-    // limpiar inputs
-    document.getElementById('devCant').value='';
-    document.getElementById('devLinea').value='';
-    document.getElementById('devUsuario').value='';
-    document.getElementById('devObs').value='';
+    setLoading(ev.currentTarget,true,'Enviando…');
+    localStorage.setItem('lastUser', usuario);
+    localStorage.setItem('lastLinea', linea);
+    await postDevolucion({ id: qs('id'), cantidad_devuelta:cantidad, linea, observacion, usuario });
+    st.innerHTML='<span class="ok">Devolución registrada.</span>';
+    E('devCant').value=''; E('devLinea').value=''; E('devUsuario').value=''; E('devObs').value='';
     await main();
-  }catch(err){
-    st.innerHTML = `<span class="err">${err.message||err}</span>`;
-  }finally{ setLoading(btn,false); }
+  }catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
-/* Go */
+/* precarga usuario/línea preferidos */
+(function(){
+  const u=localStorage.getItem('lastUser'); if(u) { const el=E('devUsuario'); if(el) el.value=u; }
+  const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
+})();
+
+/* go */
 main();
 </script>
 </body>
 </html>
+
