@@ -6,224 +6,191 @@
 <title>Ficha de bobina</title>
 <meta name="color-scheme" content="light dark" />
 <style>
-/* ========================================================
-   VARIABLES MODERNAS Y AJUSTES DE TONALIDAD (MÁS 'CANCHERO')
-   ======================================================== */
   :root{
-    /* Paleta Oscura (Más contraste y profundidad) */
-    bg: #0d1117; /* Fondo más oscuro */
-    card: #161b22; /* Card principal más claro que el fondo */
-    card2: #161b22; /* Se elimina el degradado sutil en la card */
-    text: #f0f6fc; /* Texto blanco brillante */
-    muted: #8b949e; /* Texto tenue */
-    accent: #2196f3; /* Azul primario más vibrante */
-    accent-2: #1976d2; /* Variante del azul */
-    ok: #3fb950; /* Verde de éxito */
-    err: #f85149; /* Rojo de error */
-    warn: #ff9d00; /* Naranja de advertencia */
-    border: #30363d; /* Bordes sutiles */
-    shadow: 0 4px 12px rgba(0,0,0,.45); /* Sombra más pronunciada y suave */
-    radius: 12px; /* Radio ligeramente más pequeño para un look más definido */
-    transition: 0.2s ease; /* Transición para efectos hover */
+    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
+    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
+    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35); --radius:16px;
   }
   @media (prefers-color-scheme: light){
-    /* Paleta Clara (Más limpia y aireada) */
     :root{
-      bg:#ffffff;
-      card:#f6f8fa;
-      card2:#f6f8fa;
-      text:#24292f;
-      muted:#6e7781;
-      accent:#0366d6;
-      accent-2:#005cc5;
-      ok:#22863a;
-      err:#cb2431;
-      warn:#d73a49;
-      border:#eaecef;
-      shadow:0 4px 12px rgba(27,31,35,0.1);
+      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
+      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
+      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
     }
   }
-  /* ========================================================
-     BASE
-     ======================================================== */
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    /* Fuente: Usa la más moderna del sistema */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-    line-height: 1.5;
-  }
-  .wrap{
-    max-width:1080px; /* Un poco más ancho */
-    margin:0 auto;
-    padding:24px; /* Más espaciado */
-    display:grid;
-    gap:24px; /* Más espacio entre tarjetas */
-  }
-  /* ========================================================
-     COMPONENTES (CARDS, BOTONES, INPUTS)
-     ======================================================== */
-  .card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:20px; /* Más padding interno */
-    transition: box-shadow var(--transition);
-  }
-  .card:hover{
-    box-shadow: 0 8px 25px rgba(0,0,0,.30); /* Sombra al pasar el ratón */
-  }
-  .title{
-    margin:0 0 16px;
-    font-size:24px;
-    font-weight:700;
-    letter-spacing:-0.5px; /* Más ajustado */
-    display:flex;
-    align-items:center;
-    gap:12px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 12px;
-  }
-  .badge{
-    display:inline-flex;
-    gap:6px;
-    align-items:center;
-    padding:4px 10px;
-    border:1px solid var(--border);
-    border-radius:999px;
-    font-weight:600;
-    font-size:14px;
-    color:var(--muted);
-  }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
+  .wrap{ max-width:980px; margin:0 auto; padding:18px; display:grid; gap:16px; }
+  .card{ background:linear-gradient(180deg, var(--card) 0%, var(--card2) 100%); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+  .title{ margin:0 0 4px; font-size:22px; font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px }
+  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
   .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
-  .k{
-    color:var(--muted);
-    min-width:140px;
-    display:inline-block;
-    font-weight:500;
-  }
-  .code-big{
-    font-weight:700; /* No tan gruesa como 900 */
-    font-size:26px;
-    letter-spacing:0;
-    color:var(--accent);
-  }
-  .grid{ display:grid; gap:20px } /* Más espacio en las grillas */
-  .field{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-  .field-col{ display:grid; gap:16px } /* Más espacio en columnas */
-  /* Botón Principal (Más pop) */
-  .btn{
-    padding:12px 18px;
-    border-radius:10px;
-    border:none; /* Se quita el border transparente */
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:var(--text); /* Cambia el color del texto a la variable principal (blanco o negro) */
-    font-weight:700;
-    cursor:pointer;
-    box-shadow:0 8px 20px color-mix(in srgb, var(--accent) 30%, transparent); /* Sombra más sutil y del color del acento */
-    transition: transform var(--transition), box-shadow var(--transition);
-  }
-  .btn:hover:not([disabled]){
-    transform: translateY(-1px);
-    box-shadow:0 12px 25px color-mix(in srgb, var(--accent) 40%, transparent);
-  }
-  /* Botón Ghost (Más sutil) */
-  .btn-ghost{
-    padding:8px 12px;
-    border-radius:8px;
-    border:1px solid var(--border);
-    background:transparent;
-    color:var(--accent); /* Color de acento para el texto */
-    font-weight:600;
-    cursor:pointer;
-    transition: background-color var(--transition);
-  }
-  .btn-ghost:hover:not([disabled]){
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-  }
-  .btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
-  /* Inputs y Selects */
-  .input, select, textarea{
-    width:100%;
-    padding:12px 14px;
-    border:1px solid var(--border);
-    border-radius:8px; /* Ligeramente más pequeños */
-    background:var(--bg); /* Fondo del input igual al body */
-    color:var(--text);
-    font-size:16px;
-    transition: border-color var(--transition), box-shadow var(--transition);
-  }
-  .input:focus, select:focus, textarea:focus{
-    border-color: var(--accent);
-    outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
-  }
+  .k{ color:var(--muted); min-width:140px; display:inline-block; }
+  .code-big{ font-weight:900; font-size:22px; letter-spacing:.3px }
+  .grid{ display:grid; gap:12px }
+  .field{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .field-col{ display:grid; gap:12px }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 6px 20px rgba(79,70,229,.25) }
+  .btn-ghost{ padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
+  .btn[disabled]{ opacity:.6; cursor:not-allowed }
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
   textarea{ resize:vertical }
-  .inline-edit{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    flex-wrap:wrap;
-    margin-top: 8px; /* Separación de la línea */
-  }
-  .hero-img{
-    width:100%;
-    max-height:42vh;
-    object-fit:contain;
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    background:var(--bg); /* Fondo de la imagen al color del body */
-  }
+  .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
   details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
   details > summary::-webkit-details-marker{ display:none; }
-  .caret{ transition:transform .2s ease; display:inline-block; color:var(--accent); font-weight:700 }
+  .caret{ transition:transform .2s ease; display:inline-block }
   details[open] .caret{ transform:rotate(90deg) }
-  .alert-warn{
-    border-left: 5px solid var(--warn); /* Borde lateral para llamar la atención */
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 30%, transparent);
-  }
-  .alert-danger{
-    border-left: 5px solid var(--err);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--err) 30%, transparent);
-  }
+  .alert-warn{ outline:2px solid var(--err); box-shadow:0 0 0 5px color-mix(in oklab, var(--err) 18%, transparent) }
+  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 7px color-mix(in oklab, var(--err) 28%, transparent) }
 
-  /* Skeleton (Mantiene el mismo efecto shimmer) */
+  /* Skeleton */
   @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  .skeleton{ border-radius:6px; min-height:1.5em; color:transparent !important;
+  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
     background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
     background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
-  .skel-img{ border:1px solid var(--border); border-radius:var(--radius); width:100%; height:42vh;
+  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
     background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
     background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
 
-  @media (max-width:768px){
-    .wrap { padding: 16px; }
-  }
   @media (max-width:640px){
-    .k{ min-width:100px }
-    .code-big{ font-size:24px }
-    .title{ font-size:22px }
-    .field{ display:block; } /* Para móviles, cada campo en su propia línea */
-    .k{ display:block; margin-bottom: 4px; }
+    .k{ min-width:120px }
+    .code-big{ font-size:20px }
+    .title{ font-size:20px }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-    <section id="cardDatos" class="card">
-      </section>
+  <!-- FICHA DATOS -->
+  <section id="cardDatos" class="card">
+    <h1 class="title">
+      <span>FICHA BOBINA</span>
+      <span class="badge" id="badgeId">ID: —</span>
+    </h1>
 
-    <section class="card">
-      </section>
+    <div class="grid">
+      <div class="field">
+        <span class="k">CÓDIGO:</span>
+        <span id="CODIGO" class="code-big skeleton" data-skel></span>
+      </div>
+      <div class="field">
+        <span class="k">DESCRIPCIÓN:</span>
+        <span id="DESCRIPCION" class="skeleton" data-skel></span>
+      </div>
 
-    <section class="card">
-      </section>
+      <!-- vertical: ingreso / cantidad / proveedor -->
+      <div class="field-col">
+        <div class="field">
+          <span class="k">INGRESO:</span>
+          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
+        </div>
+        <div class="field">
+          <span class="k">CANTIDAD:</span>
+          <span id="CANTIDAD" class="skeleton" data-skel></span>
+          <button class="btn-ghost" id="editCantBtn">Editar</button>
+        </div>
+        <div id="editCantWrap" class="inline-edit" style="display:none">
+          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
+          <button id="saveCantBtn" class="btn">Guardar</button>
+          <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
+          <span id="editCantStatus" class="muted"></span>
+        </div>
+        <div class="field">
+          <span class="k">PROVEEDOR:</span>
+          <span id="PROVEEDOR" class="skeleton" data-skel></span>
+        </div>
+      </div>
 
-    <div id="status" class="muted" style="display:none"></div>
+      <div class="field">
+        <span class="k">UBICACIÓN:</span>
+        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editUbicBtn">Editar</button>
+      </div>
+      <div id="editUbicWrap" class="inline-edit" style="display:none">
+        <input id="editUbicInput" class="input" type="text" />
+        <button id="saveUbicBtn" class="btn">Guardar</button>
+        <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
+        <span id="editUbicStatus" class="muted"></span>
+      </div>
+
+      <div class="field">
+        <span class="k">ESTADO:</span>
+        <span id="ESTADO" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editEstadoBtn">Editar</button>
+      </div>
+      <div id="editEstadoWrap" class="inline-edit" style="display:none">
+        <select id="editEstadoInput" class="input">
+          <option value="">—</option>
+          <option value="ALMACEN">ALMACEN</option>
+          <option value="LINEA">LINEA</option>
+          <option value="BAJA">BAJA</option>
+        </select>
+        <button id="saveEstadoBtn" class="btn">Guardar</button>
+        <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
+        <span id="editEstadoStatus" class="muted"></span>
+      </div>
+
+      <!-- Ver más -->
+      <details>
+        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
+        <div class="grid" style="margin-top:8px">
+          <div class="field"><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION" class="skeleton" data-skel></span></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- FICHA IMAGEN -->
+  <section class="card">
+    <h2 class="title">Imagen</h2>
+    <div id="imgSkel" class="skel-img"></div>
+    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" style="display:none" loading="lazy" referrerpolicy="no-referrer" />
+    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
+    <div id="imgLinkWrap" style="margin-top:6px"></div>
+  </section>
+
+  <!-- FICHA DEVOLUCIÓN -->
+  <section class="card">
+    <h2 class="title">Cargar devolución</h2>
+    <div class="grid" style="gap:10px">
+      <div class="field">
+        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <select id="devLinea" class="input" aria-label="Línea">
+          <option value="">Línea…</option>
+          <option value="L0">L0</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="TM">TM</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="devUsuario" class="input" aria-label="Usuario">
+          <option value="">Usuario…</option>
+          <option>Noe</option>
+          <option>Miguel</option>
+          <option>Marcelo</option>
+          <option>Carlos</option>
+          <option>Cande</option>
+        </select>
+      </div>
+      <div class="field">
+        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
+      </div>
+      <div class="field">
+        <button id="sendDevBtn" class="btn">Enviar devolución</button>
+        <span id="devStatus" class="muted"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- estado global -->
+  <div id="status" class="muted" style="display:none"></div>
 </div>
 
 <script>
@@ -421,4 +388,3 @@ main();
 </script>
 </body>
 </html>
-
