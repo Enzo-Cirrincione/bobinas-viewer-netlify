@@ -6,208 +6,217 @@
 <title>Ficha de bobina</title>
 <meta name="color-scheme" content="light dark" />
 <style>
-  :root{
-    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
-    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
-    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35); --radius:16px;
-  }
-  @media (prefers-color-scheme: light){
-    :root{
-      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
-      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
-      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
-    }
-  }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{ margin:0; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
-  .wrap{ max-width:980px; margin:0 auto; padding:18px; display:grid; gap:16px; }
-  .card{ background:linear-gradient(180deg, var(--card) 0%, var(--card2) 100%); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
-  .title{ margin:0 0 4px; font-size:22px; font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px }
-  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
-  .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
-  .k{ color:var(--muted); min-width:140px; display:inline-block; }
-  .code-big{ font-weight:900; font-size:22px; letter-spacing:.3px }
-  .grid{ display:grid; gap:12px }
-  .field{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  .field-col{ display:grid; gap:12px }
-  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 6px 20px rgba(79,70,229,.25) }
-  .btn-ghost{ padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
-  .btn[disabled]{ opacity:.6; cursor:not-allowed }
-  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
-  textarea{ resize:vertical }
-  .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
-  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
-  details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
-  details > summary::-webkit-details-marker{ display:none; }
-  .caret{ transition:transform .2s ease; display:inline-block }
-  details[open] .caret{ transform:rotate(90deg) }
-  .alert-warn{ outline:2px solid var(--err); box-shadow:0 0 0 5px color-mix(in oklab, var(--err) 18%, transparent) }
-  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 7px color-mix(in oklab, var(--err) 28%, transparent) }
+  :root{
+    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
+    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
+    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35); --radius:16px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
+      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
+      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
+    }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; }
+  .wrap{ max-width:980px; margin:0 auto; padding:18px; display:grid; gap:16px; }
+  .card{ background:linear-gradient(180deg, var(--card) 0%, var(--card2) 100%); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+  .title{ margin:0 0 4px; font-size:22px; font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px }
+  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
+  .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
+  .k{ color:var(--muted); min-width:140px; display:inline-block; }
+  .code-big{ font-weight:900; font-size:22px; letter-spacing:.3px }
+  .grid{ display:grid; gap:12px }
+  .field{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .field-col{ display:grid; gap:12px }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 6px 20px rgba(79,70,229,.25) }
+  .btn-ghost{ padding:8px 12px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); font-weight:700; cursor:pointer }
+  .btn[disabled]{ opacity:.6; cursor:not-allowed }
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
+  textarea{ resize:vertical }
+  .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
+  details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
+  details > summary::-webkit-details-marker{ display:none; }
+  .caret{ transition:transform .2s ease; display:inline-block }
+  details[open] .caret{ transform:rotate(90deg) }
+  .alert-warn{ outline:2px solid var(--err); box-shadow:0 0 0 5px color-mix(in oklab, var(--err) 18%, transparent) }
+  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 7px color-mix(in oklab, var(--err) 28%, transparent) }
 
-  /* Skeleton */
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
-    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
-  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
-    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+  /* Skeleton */
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
 
-  @media (max-width:640px){
-    .k{ min-width:120px }
-    .code-big{ font-size:20px }
-    .title{ font-size:20px }
-  }
+  @media (max-width:640px){
+    .k{ min-width:120px }
+    .code-big{ font-size:20px }
+    .title{ font-size:20px }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- FICHA DATOS -->
-  <section id="cardDatos" class="card">
-    <h1 class="title">
-      <span>FICHA BOBINA</span>
-      <span class="badge" id="badgeId">ID: —</span>
-    </h1>
+  <!-- FICHA DATOS -->
+  <section id="cardDatos" class="card">
+    <h1 class="title">
+      <span>FICHA BOBINA</span>
+      <span class="badge" id="badgeId">ID: —</span>
+    </h1>
 
-    <div class="grid">
-      <div class="field">
-        <span class="k">CÓDIGO:</span>
-        <span id="CODIGO" class="code-big skeleton" data-skel></span>
-      </div>
-      <div class="field">
-        <span class="k">DESCRIPCIÓN:</span>
-        <span id="DESCRIPCION" class="skeleton" data-skel></span>
-      </div>
+    <div class="grid">
+      <div class="field">
+        <span class="k">CÓDIGO:</span>
+        <span id="CODIGO" class="code-big skeleton" data-skel></span>
+      </div>
+      <div class="field">
+        <span class="k">DESCRIPCIÓN:</span>
+        <span id="DESCRIPCION" class="skeleton" data-skel></span>
+      </div>
 
-      <!-- vertical: ingreso / cantidad / proveedor -->
-      <div class="field-col">
-        <div class="field">
-          <span class="k">INGRESO:</span>
-          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
-        </div>
-        <div class="field">
-          <span class="k">CANTIDAD:</span>
-          <span id="CANTIDAD" class="skeleton" data-skel></span>
-          <button class="btn-ghost" id="editCantBtn">Editar</button>
-        </div>
-        <div id="editCantWrap" class="inline-edit" style="display:none">
-          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
-          <button id="saveCantBtn" class="btn">Guardar</button>
-          <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
-          <span id="editCantStatus" class="muted"></span>
-        </div>
-        <div class="field">
-          <span class="k">PROVEEDOR:</span>
-          <span id="PROVEEDOR" class="skeleton" data-skel></span>
-        </div>
-      </div>
+      <!-- vertical: ingreso / cantidad / proveedor -->
+      <div class="field-col">
+        <div class="field">
+          <span class="k">INGRESO:</span>
+          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
+        </div>
+        <div class="field">
+          <span class="k">CANTIDAD:</span>
+          <span id="CANTIDAD" class="skeleton" data-skel></span>
+          <button class="btn-ghost" id="editCantBtn">Editar</button>
+        </div>
+        <div id="editCantWrap" class="inline-edit" style="display:none">
+          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
+          <button id="saveCantBtn" class="btn">Guardar</button>
+          <button id="cancelCantBtn" class="btn-ghost">Cancelar</button>
+          <span id="editCantStatus" class="muted"></span>
+        </div>
+        <div class="field">
+          <span class="k">PROVEEDOR:</span>
+          <span id="PROVEEDOR" class="skeleton" data-skel></span>
+        </div>
+      </div>
 
-      <div class="field">
-        <span class="k">UBICACIÓN:</span>
-        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
-        <button class="btn-ghost" id="editUbicBtn">Editar</button>
-      </div>
-      <div id="editUbicWrap" class="inline-edit" style="display:none">
-        <input id="editUbicInput" class="input" type="text" />
-        <button id="saveUbicBtn" class="btn">Guardar</button>
-        <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
-        <span id="editUbicStatus" class="muted"></span>
-      </div>
+      <div class="field">
+        <span class="k">UBICACIÓN:</span>
+        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editUbicBtn">Editar</button>
+      </div>
+      <div id="editUbicWrap" class="inline-edit" style="display:none">
+        <input id="editUbicInput" class="input" type="text" />
+        <button id="saveUbicBtn" class="btn">Guardar</button>
+        <button id="cancelUbicBtn" class="btn-ghost">Cancelar</button>
+        <span id="editUbicStatus" class="muted"></span>
+      </div>
 
-      <div class="field">
-        <span class="k">ESTADO:</span>
-        <span id="ESTADO" class="skeleton" data-skel></span>
-        <button class="btn-ghost" id="editEstadoBtn">Editar</button>
-      </div>
-      <div id="editEstadoWrap" class="inline-edit" style="display:none">
-        <select id="editEstadoInput" class="input">
-          <option value="">—</option>
-          <option value="ALMACEN">ALMACEN</option>
-          <option value="LINEA">LINEA</option>
-          <option value="BAJA">BAJA</option>
-        </select>
-        <button id="saveEstadoBtn" class="btn">Guardar</button>
-        <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
-        <span id="editEstadoStatus" class="muted"></span>
-      </div>
+      <div class="field">
+        <span class="k">ESTADO:</span>
+        <span id="ESTADO" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editEstadoBtn">Editar</button>
+      </div>
+      <div id="editEstadoWrap" class="inline-edit" style="display:none">
+        <select id="editEstadoInput" class="input">
+          <option value="">—</option>
+          <option value="ALMACEN">ALMACEN</option>
+          <option value="LINEA">LINEA</option>
+          <option value="BAJA">BAJA</option>
+        </select>
+        <button id="saveEstadoBtn" class="btn">Guardar</button>
+        <button id="cancelEstadoBtn" class="btn-ghost">Cancelar</button>
+        <span id="editEstadoStatus" class="muted"></span>
+      </div>
 
-      <!-- Ver más -->
-      <details>
-        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
-        <div class="grid" style="margin-top:8px">
-          <div class="field"><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span></div>
-          <div class="field"><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span></div>
-          <div class="field"><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION" class="skeleton" data-skel></span></div>
-        </div>
-      </details>
-    </div>
-  </section>
+      <!-- Ver más -->
+      <details>
+        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
+        <div class="grid" style="margin-top:8px">
+          <div class="field"><span class="k">FECHA DEVOLUCIÓN:</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">ÚLTIMA LÍNEA:</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span></div>
+          <div class="field"><span class="k">OBSERVACIÓN:</span> <span id="OBSERVACION" class="skeleton" data-skel></span></div>
+        </div>
+      </details>
+    </div>
+  </section>
 
-  <!-- FICHA IMAGEN -->
-  <section class="card">
-    <h2 class="title">Imagen</h2>
-    <div id="imgSkel" class="skel-img"></div>
-    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" style="display:none" loading="lazy" referrerpolicy="no-referrer" />
-    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
-    <div id="imgLinkWrap" style="margin-top:6px"></div>
-  </section>
+  <!-- FICHA IMAGEN -->
+  <section class="card">
+    <h2 class="title">Imagen</h2>
+    <div id="imgSkel" class="skel-img"></div>
+    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" style="display:none" loading="lazy" referrerpolicy="no-referrer" />
+    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
+    <div id="imgLinkWrap" style="margin-top:6px"></div>
+  </section>
 
-  <!-- FICHA DEVOLUCIÓN -->
-  <section class="card">
-    <h2 class="title">Cargar devolución</h2>
-    <div class="grid" style="gap:10px">
-      <div class="field">
-        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
-      </div>
-      <div class="field">
-        <select id="devLinea" class="input" aria-label="Línea">
-          <option value="">Línea…</option>
-          <option value="L0">L0</option>
-          <option value="L1">L1</option>
-          <option value="L2">L2</option>
-          <option value="TM">TM</option>
-        </select>
-      </div>
-      <div class="field">
-        <select id="devUsuario" class="input" aria-label="Usuario">
-          <option value="">Usuario…</option>
-          <option>Noe</option>
-          <option>Miguel</option>
-          <option>Marcelo</option>
-          <option>Carlos</option>
-          <option>Cande</option>
-        </select>
-      </div>
-      <div class="field">
-        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
-      </div>
-      <div class="field">
-        <button id="sendDevBtn" class="btn">Enviar devolución</button>
-        <span id="devStatus" class="muted"></span>
-      </div>
-    </div>
-  </section>
+  <!-- FICHA DEVOLUCIÓN -->
+  <section class="card">
+    <h2 class="title">Cargar devolución</h2>
+    <div class="grid" style="gap:10px">
+      <div class="field">
+        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <select id="devLinea" class="input" aria-label="Línea">
+          <option value="">Línea…</option>
+          <option value="L0">L0</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="TM">TM</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="devUsuario" class="input" aria-label="Usuario">
+          <option value="">Usuario…</option>
+          <option>Noe</option>
+          <option>Miguel</option>
+          <option>Marcelo</option>
+          <option>Carlos</option>
+          <option>Cande</option>
+        </select>
+      </div>
+      <div class="field">
+        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
+      </div>
+      <div class="field">
+        <button id="sendDevBtn" class="btn">Enviar devolución</button>
+        <span id="devStatus" class="muted"></span>
+      </div>
+    </div>
+  </section>
 
-  <!-- estado global -->
-  <div id="status" class="muted" style="display:none"></div>
+  <!-- estado global -->
+  <div id="status" class="muted" style="display:none"></div>
 </div>
 
 <script>
-  /* =========================
-     CONFIG: Pega tus URLs de Flow
-     ========================= */
-  const CFG = {
-    GET_BOBINA_URL:   'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s&',   // acepta ?id=...
-    POST_UPDATE_URL:  '/api/update',   // HTTP POST
-    POST_DEV_URL:     '/api/devolucion'// HTTP POST
-  };
+/* =========================
+   CFG — ajustá por entorno
+   =========================
+   Vercel:
+     GET_BOBINA_URL  = 'https://<FLOW_GET_URL>&'
+     POST_UPDATE_URL = '/api/update'
+     POST_DEV_URL    = '/api/devolucion'
+   Netlify:
+     GET_BOBINA_URL  = '/api/bobina?'  (si tenés proxy GET) o 'https://<FLOW_GET_URL>&'
+     POST_UPDATE_URL = '/api/update'
+     POST_DEV_URL    = '/api/devolucion'
+*/
+const CFG = {
+  GET_BOBINA_URL:  '/api/bobina?',
+  POST_UPDATE_URL: '/api/update',
+  POST_DEV_URL:    '/api/devolucion'
+};
 
 /* ====== helpers ====== */
 const qs = (n)=>new URLSearchParams(location.search).get(n);
 function showStatus(msg, isError=false){
-  const el = document.getElementById('status'); if(!el) return;
-  el.style.display='block'; el.innerHTML = isError ? `<span class="err">${msg}</span>` : msg;
+  const el = document.getElementById('status'); if(!el) return;
+  el.style.display='block'; el.innerHTML = isError ? `<span class="err">${msg}</span>` : msg;
 }
 function hideStatus(){ const el=document.getElementById('status'); if(!el) return; el.innerHTML=''; el.style.display='none'; }
 function setLoading(btn,on,labelBusy){ if(!btn) return; if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; } else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; } }
@@ -216,8 +225,8 @@ function parseDateMaybe(x){ if(x==null||x==='') return null; if(/^\d+(\.\d+)?$/.
 function yearsDiff(a,b){ return (b-a)/(365.25*24*3600*1000); }
 function normSP(u){ if(!u) return u; u=u.replace(/%2520/g,'%20'); try{ const url=new URL(u); if(url.pathname.startsWith('/:u:/')||url.pathname.startsWith('/:i:/')||url.pathname.startsWith('/:x:/')){ if(!url.searchParams.has('download')) url.searchParams.set('download','1'); return url.toString(); } if(url.pathname.includes('/Forms/AllItems.aspx')){ const idParam=url.searchParams.get('id'); if(idParam){ const decoded=decodeURIComponent(idParam); const base=url.origin+'/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl='; return base+encodeURIComponent(decoded); } } return u; }catch{ return u; } }
 function toggleSkeleton(on=true){
-  document.querySelectorAll('[data-skel]').forEach(el=>{ if(on){ el.classList.add('skeleton'); el.textContent=' '; } else { el.classList.remove('skeleton'); } });
-  const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
+  document.querySelectorAll('[data-skel]').forEach(el=>{ if(on){ el.classList.add('skeleton'); el.textContent=' '; } else { el.classList.remove('skeleton'); } });
+  const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
 }
 
 /* ====== estado ====== */
@@ -225,102 +234,102 @@ let DATA = {};
 
 /* ====== render ====== */
 function render(d){
-  const g=(k,alts=[])=>{ if(d[k]!=null && d[k]!=='') return d[k]; for(const a of alts) if(d[a]!=null && d[a]!=='') return d[a]; return ''; };
+  const g=(k,alts=[])=>{ if(d[k]!=null && d[k]!=='') return d[k]; for(const a of alts) if(d[a]!=null && d[a]!=='') return d[a]; return ''; };
 
-  const idFila = g('ID_FILA');
-  const codigo = g('CODIGO',['CÓDIGO']);
-  const desc   = g('DESCRIPCION',['DESCRIPCIÓN']);
-  const fIng   = g('FECHA_INGRESO',['FECHA INGRESO']);
-  const cant   = g('CANTIDAD');
-  const prov   = g('PROVEEDOR');
-  const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
-  const est    = g('ESTADO');
-  const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
-  const linea  = g('ULTIMA_LINEA',['LINEA']);
-  const obs    = g('OBSERVACION',['OBSERVACIÓN']);
-  const imgURL = g('IMAGEN_URL');
+  const idFila = g('ID_FILA');
+  const codigo = g('CODIGO',['CÓDIGO']);
+  const desc   = g('DESCRIPCION',['DESCRIPCIÓN']);
+  const fIng   = g('FECHA_INGRESO',['FECHA INGRESO']);
+  const cant   = g('CANTIDAD');
+  const prov   = g('PROVEEDOR');
+  const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
+  const est    = g('ESTADO');
+  const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
+  const linea  = g('ULTIMA_LINEA',['LINEA']);
+  const obs    = g('OBSERVACION',['OBSERVACIÓN']);
+  const imgURL = g('IMAGEN_URL');
 
-  // título
-  const badge = document.getElementById('badgeId'); if(badge) badge.textContent = `ID: ${idFila||'—'}`;
+  // título
+  const badge = document.getElementById('badgeId'); if(badge) badge.textContent = `ID: ${idFila||'—'}`;
 
-  // básicos
-  const setTxt = (id,val)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = val; el.classList.remove('skeleton'); };
-  setTxt('CODIGO', codigo||'—');
-  setTxt('DESCRIPCION', desc||'—');
-  setTxt('CANTIDAD', (cant??'')===''?'—':String(cant));
-  setTxt('PROVEEDOR', prov||'—');
-  setTxt('UBICACION_ALMACEN', ubi||'—');
-  setTxt('ESTADO', est||'—');
-  setTxt('ULTIMA_LINEA', linea||'—');
-  setTxt('OBSERVACION', obs||'—');
+  // básicos
+  const setTxt = (id,val)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = val; el.classList.remove('skeleton'); };
+  setTxt('CODIGO', codigo||'—');
+  setTxt('DESCRIPCION', desc||'—');
+  setTxt('CANTIDAD', (cant??'')===''?'—':String(cant));
+  setTxt('PROVEEDOR', prov||'—');
+  setTxt('UBICACION_ALMACEN', ubi||'—');
+  setTxt('ESTADO', est||'—');
+  setTxt('ULTIMA_LINEA', linea||'—');
+  setTxt('OBSERVACION', obs||'—');
 
-  // fechas
-  const fmt = v => (/^\d+(\.\d+)?$/.test(String(v))) ? excelSerialToDMY(v) : (v||'—');
-  setTxt('FECHA_INGRESO', fmt(fIng));
-  setTxt('FECHA_DEVOLUCION', fmt(fDev));
+  // fechas
+  const fmt = v => (/^\d+(\.\d+)?$/.test(String(v))) ? excelSerialToDMY(v) : (v||'—');
+  setTxt('FECHA_INGRESO', fmt(fIng));
+  setTxt('FECHA_DEVOLUCION', fmt(fDev));
 
-  // alertas: BAJA (fuerte) / antigüedad (tenue)
-  const card = document.getElementById('cardDatos');
-  if(card){ card.classList.remove('alert-warn','alert-danger');
-    if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
-    else { const di=parseDateMaybe(fIng); if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); } }
-  }
+  // alertas: BAJA (fuerte) / antigüedad (tenue)
+  const card = document.getElementById('cardDatos');
+  if(card){ card.classList.remove('alert-warn','alert-danger');
+    if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
+    else { const di=parseDateMaybe(fIng); if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); } }
+  }
 
-  // imagen con skeleton
-  const imgEl = document.getElementById('imgEtiqueta');
-  const imgSk = document.getElementById('imgSkel');
-  const imgStatus = document.getElementById('imgStatus');
-  const linkW = document.getElementById('imgLinkWrap');
-  if(linkW) linkW.innerHTML = '';
-  if(imgStatus) imgStatus.textContent = '';
+  // imagen con skeleton
+  const imgEl = document.getElementById('imgEtiqueta');
+  const imgSk = document.getElementById('imgSkel');
+  const imgStatus = document.getElementById('imgStatus');
+  const linkW = document.getElementById('imgLinkWrap');
+  if(linkW) linkW.innerHTML = '';
+  if(imgStatus) imgStatus.textContent = '';
 
-  if (imgURL && imgEl){
-    const u = normSP(imgURL);
-    if(imgSk) imgSk.style.display='block';
-    imgEl.style.display='none';
-    imgEl.onload = ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='block'; if(imgStatus) imgStatus.textContent=''; };
-    imgEl.onerror= ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='none'; if(imgStatus) imgStatus.textContent='No disponible'; };
-    imgEl.src = u;
-    if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
-  }else{
-    if(imgSk) imgSk.style.display='none';
-    if(imgEl) imgEl.style.display='none';
-    if(imgStatus) imgStatus.textContent='No disponible';
-  }
+  if (imgURL && imgEl){
+    const u = normSP(imgURL);
+    if(imgSk) imgSk.style.display='block';
+    imgEl.style.display='none';
+    imgEl.onload = ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='block'; if(imgStatus) imgStatus.textContent=''; };
+    imgEl.onerror= ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.style.display='none'; if(imgStatus) imgStatus.textContent='No disponible'; };
+    imgEl.src = u;
+    if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
+  }else{
+    if(imgSk) imgSk.style.display='none';
+    if(imgEl) imgEl.style.display='none';
+    if(imgStatus) imgStatus.textContent='No disponible';
+  }
 
-  // preparar inputs
-  const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
-  const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
-  const ie=document.getElementById('editEstadoInput'); if(ie) ie.value = est || '';
+  // preparar inputs
+  const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
+  const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
+  const ie=document.getElementById('editEstadoInput'); if(ie) ie.value = est || '';
 }
 
 /* ====== fetch ====== */
 async function getBobina(id){
-  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_=${Date.now()}`;
-  const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
-  const txt = await r.text();
-  let data; try{ data=JSON.parse(txt) }catch{ data=null }
-  if(!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,220)}`);
-  if(!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,220)}`);
-  if(data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
-  return data;
+  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_=${Date.now()}`;
+  const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
+  const txt = await r.text();
+  let data; try{ data=JSON.parse(txt) }catch{ data=null }
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,220)}`);
+  if(!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,220)}`);
+  if(data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+  return data;
 }
 async function postUpdate(payload){
-  const r = await fetch(CFG.POST_UPDATE_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
-  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
+  const r = await fetch(CFG.POST_UPDATE_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 async function postDevolucion(payload){
-  const r = await fetch(CFG.POST_DEV_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
-  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
+  const r = await fetch(CFG.POST_DEV_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 
 /* ====== main ====== */
 async function main(){
-  const id = qs('id'); if(!id){ showStatus("Falta parámetro 'id'", true); return; }
-  toggleSkeleton(true); showStatus('Cargando ficha…');
-  try{ DATA = await getBobina(id); render(DATA); hideStatus(); }
-  catch(e){ showStatus(e?.message||'Error al cargar', true); }
-  finally{ toggleSkeleton(false); }
+  const id = qs('id'); if(!id){ showStatus("Falta parámetro 'id'", true); return; }
+  toggleSkeleton(true); showStatus('Cargando ficha…');
+  try{ DATA = await getBobina(id); render(DATA); hideStatus(); }
+  catch(e){ showStatus(e?.message||'Error al cargar', true); }
+  finally{ toggleSkeleton(false); }
 }
 
 /* ====== eventos (editar/guardar) ====== */
@@ -329,58 +338,58 @@ const E = (id)=>document.getElementById(id);
 E('editCantBtn').onclick = ()=>{ E('editCantWrap').style.display='flex'; };
 E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').style.display='none'; E('editCantStatus').textContent=''; };
 E('saveCantBtn').onclick = async (ev)=>{
-  const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
-  if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').style.display='none'; }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
+  if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
 E('editUbicBtn').onclick = ()=>{ E('editUbicWrap').style.display='flex'; };
 E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').style.display='none'; E('editUbicStatus').textContent=''; };
 E('saveUbicBtn').onclick = async (ev)=>{
-  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim(); if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').style.display='none'; }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim(); if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
 E('editEstadoBtn').onclick = ()=>{ E('editEstadoWrap').style.display='flex'; };
 E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').style.display='none'; E('editEstadoStatus').textContent=''; };
 E('saveEstadoBtn').onclick = async (ev)=>{
-  const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').style.display='none'; }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
+  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').style.display='none'; }
+  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
 /* ====== devolución ====== */
 E('sendDevBtn').onclick = async (ev)=>{
-  const st=E('devStatus'); st.textContent='';
-  const cantidad = Number(E('devCant').value);
-  const linea = E('devLinea').value;
-  const usuario = E('devUsuario').value;
-  const observacion = (E('devObs').value||'').trim();
-  if(isNaN(cantidad)||cantidad<=0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  if(!linea){ st.innerHTML='<span class="err">Elegí una línea.</span>'; return; }
-  if(!usuario){ st.innerHTML='<span class="err">Elegí un usuario.</span>'; return; }
+  const st=E('devStatus'); st.textContent='';
+  const cantidad = Number(E('devCant').value);
+  const linea = E('devLinea').value;
+  const usuario = E('devUsuario').value;
+  const observacion = (E('devObs').value||'').trim();
+  if(isNaN(cantidad)||cantidad<=0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  if(!linea){ st.innerHTML='<span class="err">Elegí una línea.</span>'; return; }
+  if(!usuario){ st.innerHTML='<span class="err">Elegí un usuario.</span>'; return; }
 
-  try{
-    setLoading(ev.currentTarget,true,'Enviando…');
-    localStorage.setItem('lastUser', usuario);
-    localStorage.setItem('lastLinea', linea);
-    await postDevolucion({ id: qs('id'), cantidad_devuelta:cantidad, linea, observacion, usuario });
-    st.innerHTML='<span class="ok">Devolución registrada.</span>';
-    E('devCant').value=''; E('devLinea').value=''; E('devUsuario').value=''; E('devObs').value='';
-    await main();
-  }catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  try{
+    setLoading(ev.currentTarget,true,'Enviando…');
+    localStorage.setItem('lastUser', usuario);
+    localStorage.setItem('lastLinea', linea);
+    await postDevolucion({ id: qs('id'), cantidad_devuelta:cantidad, linea, observacion, usuario });
+    st.innerHTML='<span class="ok">Devolución registrada.</span>';
+    E('devCant').value=''; E('devLinea').value=''; E('devUsuario').value=''; E('devObs').value='';
+    await main();
+  }catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
 /* precarga usuario/línea preferidos */
 (function(){
-  const u=localStorage.getItem('lastUser'); if(u) { const el=E('devUsuario'); if(el) el.value=u; }
-  const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
+  const u=localStorage.getItem('lastUser'); if(u) { const el=E('devUsuario'); if(el) el.value=u; }
+  const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
 })();
 
 /* go */
