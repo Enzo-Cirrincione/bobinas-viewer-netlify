@@ -79,6 +79,8 @@
   .field-col{ display:grid; gap: var(--space-2) }
   .k{ color:var(--muted); font-weight:600; letter-spacing:.2px; }
   .code-big{ font-weight:900; font-size: clamp(1.1rem, 1rem + .8vw, 1.65rem); letter-spacing:.3px }
+  /* Tamaño destacado para CANTIDAD */
+  .qty-value{ font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem); font-weight: 900; letter-spacing:.3px; cursor: pointer; }
 
   @media (max-width:720px){
     .field{ grid-template-columns: 130px 1fr; }
@@ -99,6 +101,8 @@
   .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
   textarea{ resize:vertical }
   .inline-edit{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  /* Alinear ediciones inline bajo el valor dentro del .field */
+  .inline-edit[data-align="field"]{ grid-column: 2 / -1; }
 
   /* Media */
   .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
@@ -170,11 +174,11 @@
           <span></span>
         </div>
         <div class="field">
-          <span class="k">CANTIDAD</span>
-          <span id="CANTIDAD" class="skeleton" data-skel></span>
-          <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
-        </div>
-        <div id="editCantWrap" class="inline-edit" hidden>
+        <span class="k">CANTIDAD</span>
+        <span id="CANTIDAD" class="code-big qty-value skeleton" data-skel title="Click para editar" aria-live="polite"></span>
+        <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
+      </div>
+      <div id="editCantWrap" class="inline-edit" data-align="field" hidden>
           <label for="editCantInput" class="k" style="min-width:unset">Nueva cantidad</label>
           <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
           <button id="saveCantBtn" class="btn" type="button">Guardar</button>
@@ -392,7 +396,26 @@ function render(d){
   // preparar inputs
   const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
   const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
-  const ie=document.getElementById('editEstadoInput'); if(ie) ie.value = est || '';
+  const ie=document.getElementById('editEstadoInput');
+  if(ie){
+    const original = String(est||'').trim();
+    const norm = original.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+    const allowed = new Set(['','ALMACEN','LINEA','BAJA']);
+    let valueToSet = '';
+    if(allowed.has(norm)){
+      valueToSet = norm; // coincide con opciones conocidas
+    } else if(original){
+      // crear/usar opción temporal con el texto recibido desde Excel
+      let opt = Array.from(ie.options).find(o => o.value === original);
+      if(!opt){
+        opt = new Option(original, original, true, true);
+        opt.dataset.custom = '1';
+        ie.insertBefore(opt, ie.options[0]);
+      }
+      valueToSet = original;
+    }
+    ie.value = valueToSet;
+  }
 }
 
 /* ====== fetch ====== */
@@ -428,7 +451,14 @@ async function main(){
 function toggleBlock(btnId, wrapId){
   const btn = document.getElementById(btnId); const wrap = document.getElementById(wrapId);
   if(!btn || !wrap) return; const open = wrap.hasAttribute('hidden');
-  if(open){ wrap.removeAttribute('hidden'); btn.setAttribute('aria-expanded','true'); }
+  if(open){
+    wrap.removeAttribute('hidden'); btn.setAttribute('aria-expanded','true');
+    const first = wrap.querySelector('input,select,textarea,button');
+    if(first){ setTimeout(()=>{ first.focus(); if(first.select) first.select(); }, 0); }
+  } else {
+    wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false');
+  }
+}
   else { wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false'); }
 }
 
@@ -436,6 +466,7 @@ function toggleBlock(btnId, wrapId){
 const E = (id)=>document.getElementById(id);
 
 E('editCantBtn').onclick = ()=> toggleBlock('editCantBtn','editCantWrap');
+// También abrir al hacer click en el valor de CANTIDAD
 E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').setAttribute('hidden',''); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
 E('saveCantBtn').onclick = async (ev)=>{
   const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
@@ -493,7 +524,21 @@ E('sendDevBtn').onclick = async (ev)=>{
 })();
 
 /* go */
+function initVisibility(){
+  const pairs = [
+    ['editCantBtn','editCantWrap'],
+    ['editUbicBtn','editUbicWrap'],
+    ['editEstadoBtn','editEstadoWrap']
+  ];
+  for(const [btnId,wrapId] of pairs){
+    const btn=document.getElementById(btnId); const wrap=document.getElementById(wrapId);
+    if(wrap && !wrap.hasAttribute('hidden')) wrap.setAttribute('hidden','');
+    if(btn) btn.setAttribute('aria-expanded','false');
+  }
+}
+initVisibility();
 main();
 </script>
 </body>
 </html>
+
