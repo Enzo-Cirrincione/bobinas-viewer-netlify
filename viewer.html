@@ -80,7 +80,7 @@
   .k{ color:var(--muted); font-weight:600; letter-spacing:.2px; }
   .code-big{ font-weight:900; font-size: clamp(1.1rem, 1rem + .8vw, 1.65rem); letter-spacing:.3px }
   /* Tamaño destacado para CANTIDAD */
-  .qty-value{ font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem); font-weight: 900; letter-spacing:.3px; cursor: pointer; }
+  .qty-value{ font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem); font-weight: 900; letter-spacing:.3px; }
 
   @media (max-width:720px){
     .field{ grid-template-columns: 130px 1fr; }
@@ -174,11 +174,11 @@
           <span></span>
         </div>
         <div class="field">
-        <span class="k">CANTIDAD</span>
-        <span id="CANTIDAD" class="code-big qty-value skeleton" data-skel title="Click para editar" aria-live="polite"></span>
-        <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
-      </div>
-      <div id="editCantWrap" class="inline-edit" data-align="field" hidden>
+          <span class="k">CANTIDAD</span>
+          <span id="CANTIDAD" class="qty-value skeleton" data-skel aria-live="polite"></span>
+          <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
+        </div>
+        <div id="editCantWrap" class="inline-edit" data-align="field" hidden>
           <label for="editCantInput" class="k" style="min-width:unset">Nueva cantidad</label>
           <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
           <button id="saveCantBtn" class="btn" type="button">Guardar</button>
@@ -197,7 +197,7 @@
         <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editUbicBtn" type="button" aria-expanded="false" aria-controls="editUbicWrap">Editar</button>
       </div>
-      <div id="editUbicWrap" class="inline-edit" hidden>
+      <div id="editUbicWrap" class="inline-edit" data-align="field" hidden>
         <label for="editUbicInput" class="k" style="min-width:unset">Nueva ubicación</label>
         <input id="editUbicInput" class="input" type="text" />
         <button id="saveUbicBtn" class="btn" type="button">Guardar</button>
@@ -210,7 +210,7 @@
         <span id="ESTADO" class="skeleton" data-skel></span>
         <button class="btn-ghost" id="editEstadoBtn" type="button" aria-expanded="false" aria-controls="editEstadoWrap">Editar</button>
       </div>
-      <div id="editEstadoWrap" class="inline-edit" hidden>
+      <div id="editEstadoWrap" class="inline-edit" data-align="field" hidden>
         <label for="editEstadoInput" class="k" style="min-width:unset">Estado</label>
         <select id="editEstadoInput" class="input">
           <option value="">—</option>
@@ -398,23 +398,24 @@ function render(d){
   const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
   const ie=document.getElementById('editEstadoInput');
   if(ie){
-    const original = String(est||'').trim();
-    const norm = original.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
-    const allowed = new Set(['','ALMACEN','LINEA','BAJA']);
-    let valueToSet = '';
-    if(allowed.has(norm)){
-      valueToSet = norm; // coincide con opciones conocidas
-    } else if(original){
-      // crear/usar opción temporal con el texto recibido desde Excel
-      let opt = Array.from(ie.options).find(o => o.value === original);
-      if(!opt){
-        opt = new Option(original, original, true, true);
-        opt.dataset.custom = '1';
-        ie.insertBefore(opt, ie.options[0]);
+    const original = (est ?? '').toString().trim();
+    if(original){
+      const norm = (original.normalize ? original.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : original).toUpperCase();
+      const known = new Set(['ALMACEN','LINEA','BAJA']);
+      if(known.has(norm)){
+        ie.value = norm; // coincide con opciones conocidas
+      } else {
+        // crear/usar opción temporal con el texto recibido desde Excel
+        let opt = Array.from(ie.options).find(o => o.value === original);
+        if(!opt){
+          opt = new Option(original, original);
+          ie.insertBefore(opt, ie.options[0]);
+        }
+        ie.value = original;
       }
-      valueToSet = original;
+    } else {
+      ie.value = '';
     }
-    ie.value = valueToSet;
   }
 }
 
@@ -459,14 +460,11 @@ function toggleBlock(btnId, wrapId){
     wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false');
   }
 }
-  else { wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false'); }
-}
 
 /* ====== eventos (editar/guardar) ====== */
 const E = (id)=>document.getElementById(id);
 
 E('editCantBtn').onclick = ()=> toggleBlock('editCantBtn','editCantWrap');
-// También abrir al hacer click en el valor de CANTIDAD
 E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').setAttribute('hidden',''); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
 E('saveCantBtn').onclick = async (ev)=>{
   const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
@@ -541,4 +539,6 @@ main();
 </script>
 </body>
 </html>
+
+
 
