@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Ficha de bobina</title>
+<title>Ficha bobina</title>
 <meta name="color-scheme" content="light dark" />
 <style>
   :root{
@@ -46,6 +46,41 @@
     .k{ min-width:120px }
     .code-big{ font-size:20px }
   }
+/* --- layout vertical + responsive --- */
+.field-col { display:grid; gap:10px; }
+@media (min-width: 760px){
+  .field-col { grid-template-columns: 1fr; }
+}
+
+/* filas estándar */
+.field { display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+.field .k { color:var(--muted); min-width:150px; display:inline-block }
+
+/* alertas */
+.alert-warn{ outline:2px solid var(--warn);
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--warn) 15%, transparent) }
+.alert-danger{ outline:3px solid var(--err);
+  box-shadow:0 0 0 6px color-mix(in oklab, var(--err) 20%, transparent) }
+
+/* --- skeleton (shimmer) --- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton{
+  position:relative; color:transparent !important;
+  border-radius:8px; min-height:18px;
+  background:linear-gradient(90deg,
+    rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+  background-size: 400% 100%; animation: shimmer 1.2s infinite linear;
+}
+.skel-img{
+  border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
+  background:linear-gradient(90deg,
+    rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+  background-size:400% 100%; animation: shimmer 1.2s infinite linear;
+}
+
 </style>
 </head>
 <body>
@@ -61,14 +96,21 @@
     <div class="grid">
       <div><span class="k">CÓDIGO:</span> <span id="CODIGO" class="code-big"></span></div>
       <div><span class="k">DESCRIPCIÓN:</span> <span id="DESCRIPCION"></span></div>
-      <div class="row">
-        <div><span class="k">INGRESO:</span> <span id="FECHA_INGRESO"></span></div>
-        <div><span class="k">CANTIDAD:</span> <span id="CANTIDAD"></span>
-          <button class="btn-ghost" id="editCantBtn">Editar</button>
-        </div>
-        <div><span class="k">PROVEEDOR:</span> <span id="PROVEEDOR"></span></div>
+    <div class="field-col">
+      <div class="field">
+      <span class="k">INGRESO:</span>
+      <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
       </div>
-
+    <div class="field">
+      <span class="k">PROVEEDOR:</span>
+      <span id="PROVEEDOR" class="skeleton" data-skel></span>
+      </div>
+    <div class="field">
+      <span class="k">CANTIDAD:</span>
+      <span id="CANTIDAD" class="skeleton" data-skel></span>
+      <button class="btn-ghost" id="editCantBtn">Editar</button>
+      </div>
+    </div>
       <!-- EDITAR CANTIDAD -->
       <div id="editCantWrap" class="inline-edit" style="display:none">
         <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
@@ -200,6 +242,17 @@ function yearsDiff(from, to){
   const msYear = 365.25*24*3600*1000;
   return (to - from)/msYear;
 }
+function toggleSkeleton(on=true){
+  // textos
+  document.querySelectorAll('[data-skel]').forEach(el=>{
+    if(on){ el.classList.add('skeleton'); el.textContent = ' '; } // NBSP
+    else  { el.classList.remove('skeleton'); }
+  });
+  // imagen
+  const sk = document.getElementById('imgSkel');
+  if (sk) sk.style.display = on ? 'block' : 'none';
+}
+  
 function setLoading(btn, on, labelBusy){
   if(!btn) return;
   if(on){
@@ -275,32 +328,51 @@ function render(d){
   document.getElementById('OBSERVACION').textContent = obs || '—';
 
   // Antigüedad: si ingreso >= 2 años atrás → marcar
+  // Antigüedad + estado
   const cardDatos = document.getElementById('cardDatos');
-  cardDatos.classList.remove('alert-old');
+  cardDatos.classList.remove('alert-warn','alert-danger');
+
   const dIng = parseDateMaybe(fIng);
-  if (dIng){
-    const now = new Date();
-    if (yearsDiff(dIng, now) >= 2){
-      cardDatos.classList.add('alert-old');
-    }
+  if (String(est).toUpperCase() === 'BAJA') {
+    cardDatos.classList.add('alert-danger');      // rojo fuerte por baja
+  } else if (dIng){
+   const now = new Date();
+   if (yearsDiff(dIng, now) >= 2){
+    cardDatos.classList.add('alert-warn');      // rojo tenue por antigüedad
+   }
   }
+
 
   // Imagen
   const imgEl = document.getElementById('imgEtiqueta');
   const imgStatus = document.getElementById('imgStatus');
   const imgLinkWrap = document.getElementById('imgLinkWrap');
+  const imgSkel = document.getElementById('imgSkel');
+
   imgLinkWrap.innerHTML = '';
+  imgStatus.textContent = '';
+
   if (imgURL){
-    const u = normSP(imgURL);
-    imgEl.src = u;
+   const u = normSP(imgURL);
+   imgSkel.style.display = 'block';
+   imgEl.style.display = 'none';
+   imgEl.onload = ()=>{
+    imgSkel.style.display = 'none';
     imgEl.style.display = 'block';
-    imgEl.onload = ()=>{ imgStatus.textContent = ''; };
-    imgEl.onerror = ()=>{ imgEl.style.display='none'; imgStatus.textContent='No disponible'; };
+    imgStatus.textContent = '';
+    };
+    imgEl.onerror = ()=>{
+    imgSkel.style.display = 'none';
+    imgEl.style.display = 'none';
+    imgStatus.textContent = 'No disponible';
+    };
+    imgEl.src = u;
     imgLinkWrap.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
-  }else{
-    imgEl.style.display='none';
-    imgStatus.textContent='No disponible';
-  }
+    }else{
+     imgSkel.style.display = 'none';
+     imgEl.style.display = 'none';
+     imgStatus.textContent = 'No disponible';
+     }
 
   // preparar ediciones con valores actuales
   document.getElementById('editCantInput').value = cant || 0;
@@ -346,15 +418,20 @@ async function main(){
   const statusEl = document.getElementById('status');
   if(!id){ statusEl.textContent = "Falta parámetro 'id'"; return; }
 
+  toggleSkeleton(true);                         // <<< NUEVO
   statusEl.textContent = 'Cargando ficha…';
+
   try{
     DATA = await getBobina(id);
     render(DATA);
     statusEl.textContent = '';
   }catch(e){
     statusEl.innerHTML = `<span class="err">${e?.message || 'Error al cargar'}</span>`;
+  }finally{
+    toggleSkeleton(false);                      // <<< NUEVO
   }
 }
+
 
 /* ====== UI handlers (Editar) ====== */
 document.getElementById('editCantBtn').onclick = () => {
