@@ -303,7 +303,7 @@
 
 <script>
 /* =========================
-   CFG — (idéntica a tu versión)
+   CFG
    ========================= */
 const CFG = {
   GET_BOBINA_URL:  'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s&',
@@ -319,13 +319,61 @@ function showStatus(msg, isError=false){
   clearTimeout(showStatus._t); showStatus._t = setTimeout(()=>{ el.hidden = true; }, 3200);
 }
 function hideStatus(){ const el=document.getElementById('status'); if(!el) return; el.hidden = true; el.innerHTML=''; }
-function setLoading(btn,on,labelBusy){ if(!btn) return; if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; } else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; } }
-function excelSerialToDMY(v){ const n=Number(v); if(!isFinite(n)||n<=0) return (v||''); const d=new Date(Math.round((n-25569)*86400*1000)); const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); const yy=d.getFullYear(); return `${dd}/${mm}/${yy}`; }
-function parseDateMaybe(x){ if(x==null||x==='') return null; if(/^\d+(\.\d+)?$/.test(String(x))){ const t=Math.round((Number(x)-25569)*86400*1000); return new Date(t); } const d=new Date(x); return isNaN(d)?null:d; }
+function setLoading(btn,on,labelBusy){
+  if(!btn) return;
+  if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; }
+  else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; delete btn.dataset.label; }
+}
+function excelSerialToDMY(v){
+  const n=Number(v); if(!isFinite(n)||n<=0) return (v||'');
+  const d=new Date(Math.round((n-25569)*86400*1000));
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+function parseDateMaybe(x){
+  if(x==null||x==='') return null;
+  if(/^\d+(\.\d+)?$/.test(String(x))){ const t=Math.round((Number(x)-25569)*86400*1000); return new Date(t); }
+  const d=new Date(x); return isNaN(d)?null:d;
+}
 function yearsDiff(a,b){ return (b-a)/(365.25*24*3600*1000); }
-function normSP(u){ if(!u) return u; u=u.replace(/%2520/g,'%20'); try{ const url=new URL(u); if(url.pathname.startsWith('/:u:/')||url.pathname.startsWith('/:i:/')||url.pathname.startsWith('/:x:/')){ if(!url.searchParams.has('download')) url.searchParams.set('download','1'); return url.toString(); } if(url.pathname.includes('/Forms/AllItems.aspx')){ const idParam=url.searchParams.get('id'); if(idParam){ const decoded=decodeURIComponent(idParam); const base=url.origin+'/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl='; return base+encodeURIComponent(decoded); } } return u; }catch{ return u; } }
+
+/* SharePoint URL normalizer + download.aspx conversion + fallback proxy */
+function normSP(u){
+  if(!u) return u;
+  u = u.replace(/%2520/g,'%20'); // doble encode de espacios
+  try{
+    const url = new URL(u);
+
+    // Short links: /:u:/, /:i:/, /:x:/  -> usar download.aspx con SourceUrl
+    if (url.hostname.includes('sharepoint.com') &&
+        (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/'))) {
+      const sitePath = '/sites/ALMACENPRE-PRODUCCION'; // ajustá si cambia el sitio
+      return `${url.origin}${sitePath}/_layouts/15/download.aspx?SourceUrl=${encodeURIComponent(u)}`;
+    }
+
+    // Vistas de librería (Forms/AllItems.aspx) -> mismo patrón
+    if (url.pathname.includes('/Forms/AllItems.aspx')){
+      const idParam = url.searchParams.get('id');
+      if(idParam){
+        const decoded = decodeURIComponent(idParam);
+        const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
+        return base + encodeURIComponent(decoded);
+      }
+    }
+
+    // Si nada de lo anterior, probá con download=1
+    if(!url.searchParams.has('download')) url.searchParams.set('download','1');
+    return url.toString();
+  }catch{ return u; }
+}
+
 function toggleSkeleton(on=true){
-  document.querySelectorAll('[data-skel]').forEach(el=>{ if(on){ el.classList.add('skeleton'); el.textContent=' '; } else { el.classList.remove('skeleton'); } });
+  document.querySelectorAll('[data-skel]').forEach(el=>{
+    if(on){ el.classList.add('skeleton'); el.textContent=' '; }
+    else { el.classList.remove('skeleton'); }
+  });
   const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
 }
 
@@ -370,12 +418,16 @@ function render(d){
 
   // alertas: BAJA (fuerte) / antigüedad (tenue)
   const card = document.getElementById('cardDatos');
-  if(card){ card.classList.remove('alert-warn','alert-danger');
+  if(card){
+    card.classList.remove('alert-warn','alert-danger');
     if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
-    else { const di=parseDateMaybe(fIng); if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); } }
+    else {
+      const di=parseDateMaybe(fIng);
+      if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); }
+    }
   }
 
-  // imagen con skeleton
+  // imagen con skeleton + fallback proxy
   const imgEl = document.getElementById('imgEtiqueta');
   const imgSk = document.getElementById('imgSkel');
   const imgStatus = document.getElementById('imgStatus');
@@ -384,12 +436,29 @@ function render(d){
   if(imgStatus) imgStatus.textContent = '';
 
   if (imgURL && imgEl){
-    const u = normSP(imgURL);
+    const original = imgURL;
+    const u = normSP(original);
     if(imgSk) imgSk.style.display='block';
     imgEl.hidden = true;
-    imgEl.onload = ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.hidden=false; if(imgStatus) imgStatus.textContent=''; };
-    imgEl.onerror= ()=>{ if(imgSk) imgSk.style.display='none'; imgEl.hidden=true; if(imgStatus) imgStatus.textContent='No disponible'; };
+
+    imgEl.onload = ()=>{
+      if(imgSk) imgSk.style.display='none';
+      imgEl.hidden=false;
+      if(imgStatus) imgStatus.textContent='';
+    };
+    imgEl.onerror = ()=>{
+      if(imgSk) imgSk.style.display='none';
+      // Reintento una vez vía proxy
+      if(!imgEl.dataset.triedProxy){
+        imgEl.dataset.triedProxy = '1';
+        imgEl.src = `/api/img?u=${encodeURIComponent(original)}`;
+      }else{
+        imgEl.hidden = true;
+        if(imgStatus) imgStatus.textContent='No disponible';
+      }
+    };
     imgEl.src = u;
+
     if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
   }else{
     if(imgSk) imgSk.style.display='none';
@@ -400,24 +469,36 @@ function render(d){
   // preparar inputs
   const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
   const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
+
+  // Estado: limpiar y forzar selección (con opción temporal si no coincide)
   const ie=document.getElementById('editEstadoInput');
   if(ie){
-    const original = (est ?? '').toString().trim();
+    const clean = (s)=> s
+      .replace(/[\u00A0\u2000-\u200B]/g,' ')   // espacios unicode
+      .replace(/[\r\n\t]+/g,' ')             // saltos
+      .replace(/\s\s+/g,' ')                 // colapsar
+      .trim();
+
+    const originalRaw = (est ?? '').toString();
+    const original = clean(originalRaw);
+
     if(original){
       const norm = (original.normalize ? original.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : original).toUpperCase();
       const known = new Set(['ALMACEN','LINEA','BAJA']);
       if(known.has(norm)){
-        ie.value = norm; // coincide con opciones conocidas
-      } else {
-        // crear/usar opción temporal con el texto recibido desde Excel
-        let opt = Array.from(ie.options).find(o => o.value === original);
-        if(!opt){
-          opt = new Option(original, original);
-          ie.insertBefore(opt, ie.options[0]);
+        ie.value = norm;
+      }else{
+        // opción temporal en el índice 0
+        if(!ie.options.length || ie.options[0].dataset.temp !== '1'){
+          ie.insertBefore(new Option(original, original), ie.options[0] || null);
+          ie.options[0].dataset.temp = '1';
+        }else{
+          ie.options[0].text = original;
+          ie.options[0].value = original;
         }
-        ie.value = original;
+        ie.selectedIndex = 0;
       }
-    } else {
+    }else{
       ie.value = '';
     }
   }
@@ -471,30 +552,64 @@ const E = (id)=>document.getElementById(id);
 
 E('editCantBtn').onclick = ()=> toggleBlock('editCantBtn','editCantWrap');
 E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
-E('saveCantBtn').onclick = async (ev)=>{
-  const st=E('editCantStatus'); st.textContent=''; const v=Number(E('editCantInput').value);
+E('saveCantBtn').onclick = async ()=>{
+  const btnId='saveCantBtn'; const btn=E(btnId);
+  const st=E('editCantStatus'); st.textContent='';
+  const v=Number(E('editCantInput').value);
   if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false'); }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    // cerrar antes de recargar
+    E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    // reabrir si falló
+    E('editCantWrap').classList.add('is-open'); E('editCantBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 E('editUbicBtn').onclick = ()=> toggleBlock('editUbicBtn','editUbicWrap');
 E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false'); E('editUbicStatus').textContent=''; };
-E('saveUbicBtn').onclick = async (ev)=>{
-  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim(); if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false'); }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+E('saveUbicBtn').onclick = async ()=>{
+  const btnId='saveUbicBtn'; const btn=E(btnId);
+  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim();
+  if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    E('editUbicWrap').classList.add('is-open'); E('editUbicBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 E('editEstadoBtn').onclick = ()=> toggleBlock('editEstadoBtn','editEstadoWrap');
 E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false'); E('editEstadoStatus').textContent=''; };
-E('saveEstadoBtn').onclick = async (ev)=>{
+E('saveEstadoBtn').onclick = async ()=>{
+  const btnId='saveEstadoBtn'; const btn=E(btnId);
   const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
-  try{ setLoading(ev.currentTarget,true,'Guardando…'); await postUpdate({ id: qs('id'), updates:{ ESTADO:v } }); st.innerHTML='<span class="ok">Guardado.</span>'; await main(); E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false'); }
-  catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ ESTADO:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    E('editEstadoWrap').classList.add('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 /* ====== devolución ====== */
@@ -526,9 +641,8 @@ E('sendDevBtn').onclick = async (ev)=>{
   const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
 })();
 
-/* go */
+/* go: cerrar paneles al cargar y render */
 (function ensureClosedOnLoad(){
-  // Cerrar explícitamente todos los paneles al cargar
   ['editCantWrap','editUbicWrap','editEstadoWrap'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.classList.remove('is-open');
