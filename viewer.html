@@ -6,375 +6,370 @@
 <title>Ficha de bobina — UI modernizada</title>
 <meta name="color-scheme" content="light dark" />
 <style>
-  /* =============================
-     Design tokens (modern + fluid)
-     ============================= */
-  :root{
-    /* Colors */
-    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
-    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
-    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35);
+  /* =============================
+     Design tokens (modern + fluid)
+     ============================= */
+  :root{
+    /* Colors */
+    --bg: #0b0e14; --card:#0f1421; --card2:#0c111c; --text:#e6edf6; --muted:#94a3b8;
+    --accent:#6366f1; --accent-2:#8b5cf6; --ok:#22c55e; --err:#ef4444; --warn:#f97316;
+    --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.35);
 
-    /* Surfaces */
-    --surface: linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
-    --surface-glass: color-mix(in oklab, var(--card) 60%, transparent);
+    /* Surfaces */
+    --surface: linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+    --surface-glass: color-mix(in oklab, var(--card) 60%, transparent);
 
-    /* Radius, spacing & typography */
-    --radius: 16px; --radius-sm: 12px; --radius-lg: 22px;
-    --space-1: clamp(8px, 1.2vw, 12px);
-    --space-2: clamp(12px, 1.6vw, 16px);
-    --space-3: clamp(16px, 2.2vw, 22px);
-    --space-4: clamp(22px, 3vw, 30px);
-    --step--1: clamp(.88rem, .84rem + .2vw, 1rem);
-    --step-0: clamp(1rem, .95rem + .35vw, 1.25rem);
-    --step-1: clamp(1.25rem, 1.1rem + .8vw, 1.6rem);
-    --step-2: clamp(1.6rem, 1.3rem + 1.6vw, 2.2rem);
+    /* Radius, spacing & typography */
+    --radius: 16px; --radius-sm: 12px; --radius-lg: 22px;
+    --space-1: clamp(8px, 1.2vw, 12px);
+    --space-2: clamp(12px, 1.6vw, 16px);
+    --space-3: clamp(16px, 2.2vw, 22px);
+    --space-4: clamp(22px, 3vw, 30px);
+    --step--1: clamp(.88rem, .84rem + .2vw, 1rem);
+    --step-0: clamp(1rem, .95rem + .35vw, 1.25rem);
+    --step-1: clamp(1.25rem, 1.1rem + .8vw, 1.6rem);
+    --step-2: clamp(1.6rem, 1.3rem + 1.6vw, 2.2rem);
 
-    /* Focus ring */
-    --ring: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
-  }
-  @media (prefers-color-scheme: light){
-    :root{
-      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
-      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
-      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
-    }
-  }
+    /* Focus ring */
+    --ring: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --card2:#ffffff; --text:#0b1220; --muted:#54627a;
+      --accent:#4f46e5; --accent-2:#7c3aed; --ok:#16a34a; --err:#dc2626; --warn:#ea580c;
+      --border:#e5e7eb; --shadow:0 12px 40px rgba(2,6,23,.08);
+    }
+  }
 
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { height: 100%; }
-  body{
-    margin:0; background: radial-gradient(1100px 600px at 90% -10%, color-mix(in oklab, var(--accent) 8%, transparent), transparent), var(--bg);
-    color:var(--text);
-    font: 400 var(--step-0) ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    letter-spacing:.2px;
-  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height: 100%; }
+  body{
+    margin:0; background: radial-gradient(1100px 600px at 90% -10%, color-mix(in oklab, var(--accent) 8%, transparent), transparent), var(--bg);
+    color:var(--text);
+    font: 400 var(--step-0) ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    letter-spacing:.2px;
+  }
 
-  /* ============================= */
-  .wrap{ width:min(1040px, 92%); margin-inline:auto; padding: var(--space-3) var(--space-2);
-         display:grid; gap: var(--space-3); }
+  /* ============================= */
+  .wrap{ width:min(1040px, 92%); margin-inline:auto; padding: var(--space-3) var(--space-2);
+         display:grid; gap: var(--space-3); }
 
-  header.site{
-    position: sticky; top: 0; z-index: 5;
-    backdrop-filter: blur(10px) saturate(140%);
-    border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-    background: var(--surface-glass);
-  }
-  .topbar{ width:min(1040px, 92%); height:62px; display:flex; align-items:center; justify-content:space-between; margin-inline:auto; }
-  .brand{ display:flex; align-items:center; gap:.7rem; font-weight:800; letter-spacing:.3px; }
-  .logo{ width:26px; aspect-ratio:1; border-radius:8px; box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 20%, transparent);
-         background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent)); }
+  header.site{
+    position: sticky; top: 0; z-index: 5;
+    backdrop-filter: blur(10px) saturate(140%);
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    background: var(--surface-glass);
+  }
+  .topbar{ width:min(1040px, 92%); height:62px; display:flex; align-items:center; justify-content:space-between; margin-inline:auto; }
+  .brand{ display:flex; align-items:center; gap:.7rem; font-weight:800; letter-spacing:.3px; }
+  .logo{ width:26px; aspect-ratio:1; border-radius:8px; box-shadow:0 0 0 4px color-mix(in oklab, var(--accent) 20%, transparent);
+         background: conic-gradient(from 210deg, var(--accent), var(--accent-2), var(--accent)); }
 
-  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding: var(--space-3); }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding: var(--space-3); }
 
-  .title{ margin:0 0 6px; font-size:var(--step-1); font-weight:900; letter-spacing:.25px; display:flex; align-items:center; gap:10px }
-  .subtitle{ margin:0; color:var(--muted); font-size:var(--step--1); }
+  .title{ margin:0 0 6px; font-size:var(--step-1); font-weight:900; letter-spacing:.25px; display:flex; align-items:center; gap:10px }
+  .subtitle{ margin:0; color:var(--muted); font-size:var(--step--1); }
 
-  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
-  .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
+  .badge{ display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-weight:700; }
+  .muted{ color:var(--muted) } .ok{ color:var(--ok) } .err{ color:var(--err) }
 
-  /* Fields */
-  .grid{ display:grid; gap: var(--space-2) }
-  .field{ display:grid; grid-template-columns: 180px 1fr auto; gap:10px; align-items:center }
-  .field-col{ display:grid; gap: var(--space-2) }
-  .k{ color:var(--muted); font-weight:600; letter-spacing:.2px; }
-  .code-big{ font-weight:900; font-size: clamp(1.1rem, 1rem + .8vw, 1.65rem); letter-spacing:.3px }
-  /* Tamaño destacado para CANTIDAD */
-  .qty-value{ font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem); font-weight: 900; letter-spacing:.3px; }
+  /* Fields */
+  .grid{ display:grid; gap: var(--space-2) }
+  .field{ display:grid; grid-template-columns: 180px 1fr auto; gap:10px; align-items:center }
+  .field-col{ display:grid; gap: var(--space-2) }
+  .k{ color:var(--muted); font-weight:600; letter-spacing:.2px; }
+  .code-big{ font-weight:900; font-size: clamp(1.1rem, 1rem + .8vw, 1.65rem); letter-spacing:.3px }
+  /* Tamaño destacado para CANTIDAD */
+  .qty-value{ font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem); font-weight: 900; letter-spacing:.3px; }
 
-  @media (max-width:720px){
-    .field{ grid-template-columns: 130px 1fr; }
-    .field > .btn-ghost{ grid-column: 1 / -1; justify-self: start; }
-  }
+  @media (max-width:720px){
+    .field{ grid-template-columns: 130px 1fr; }
+    .field > .btn-ghost{ grid-column: 1 / -1; justify-self: start; }
+  }
 
-  /* Buttons */
-  .btn, .btn-ghost{ --pad-y:.7rem; --pad-x:1rem; border-radius: 12px; font-weight:800; cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease; }
-  .btn{ padding:var(--pad-y) var(--pad-x); border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; box-shadow:0 6px 20px rgba(79,70,229,.25) }
-  .btn:hover{ transform: translateY(-1px); box-shadow:0 12px 26px rgba(79,70,229,.28) }
-  .btn:active{ transform: translateY(0) scale(.98) }
-  .btn-ghost{ padding:calc(var(--pad-y) - 2px) calc(var(--pad-x) - 2px); border:1px solid var(--border); background:color-mix(in oklab, var(--card) 30%, transparent); color:var(--text) }
-  .btn-ghost:hover{ background:color-mix(in oklab, var(--card) 45%, transparent) }
-  .btn[disabled]{ opacity:.6; cursor:not-allowed }
-  .btn:focus-visible, .btn-ghost:focus-visible, .input:focus-visible, select:focus-visible, textarea:focus-visible{ outline: none; box-shadow: var(--ring); }
+  /* Buttons */
+  .btn, .btn-ghost{ --pad-y:.7rem; --pad-x:1rem; border-radius: 12px; font-weight:800; cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease; }
+  .btn{ padding:var(--pad-y) var(--pad-x); border:1px solid transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; box-shadow:0 6px 20px rgba(79,70,229,.25) }
+  .btn:hover{ transform: translateY(-1px); box-shadow:0 12px 26px rgba(79,70,229,.28) }
+  .btn:active{ transform: translateY(0) scale(.98) }
+  .btn-ghost{ padding:calc(var(--pad-y) - 2px) calc(var(--pad-x) - 2px); border:1px solid var(--border); background:color-mix(in oklab, var(--card) 30%, transparent); color:var(--text) }
+  .btn-ghost:hover{ background:color-mix(in oklab, var(--card) 45%, transparent) }
+  .btn[disabled]{ opacity:.6; cursor:not-allowed }
+  .btn:focus-visible, .btn-ghost:focus-visible, .input:focus-visible, select:focus-visible, textarea:focus-visible{ outline: none; box-shadow: var(--ring); }
 
-  /* Inputs */
-  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
-  textarea{ resize:vertical }
+  /* Inputs */
+  .input, select, textarea{ width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text); font-size:16px; }
+  textarea{ resize:vertical }
 
-  /* Edición inline: por defecto CERRADA */
-  .inline-edit{ display:none; gap:8px; align-items:center; flex-wrap:wrap }
-  /* Abierta cuando tiene .is-open */
-  .inline-edit.is-open{ display:flex; }
-  /* Alinear bloque de edición bajo el valor en .field */
-  .inline-edit[data-align="field"]{ grid-column: 2 / -1; }
+  /* Edición inline: por defecto CERRADA */
+  .inline-edit{ display:none; gap:8px; align-items:center; flex-wrap:wrap }
+  /* Abierta cuando tiene .is-open */
+  .inline-edit.is-open{ display:flex; }
+  /* Alinear bloque de edición bajo el valor en .field */
+  .inline-edit[data-align="field"]{ grid-column: 2 / -1; }
 
-  /* Media */
-  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
+  /* Media */
+  .hero-img{ width:100%; max-height:42vh; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:#0b0f19 }
 
-  /* Details */
-  details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
-  details > summary::-webkit-details-marker{ display:none; }
-  .caret{ transition:transform .2s ease; display:inline-block }
-  details[open] .caret{ transform:rotate(90deg) }
+  /* Details */
+  details > summary{ list-style:none; cursor:pointer; user-select:none; padding:8px 0; display:flex; align-items:center; gap:8px }
+  details > summary::-webkit-details-marker{ display:none; }
+  .caret{ transition:transform .2s ease; display:inline-block }
+  details[open] .caret{ transform:rotate(90deg) }
 
-  /* Alerts (auto applied by JS) */
-  .alert-warn{ outline:2px solid var(--warn); box-shadow:0 0 0 6px color-mix(in oklab, var(--warn) 22%, transparent) }
-  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 8px color-mix(in oklab, var(--err) 28%, transparent) }
+  /* Alerts (auto applied by JS) */
+  .alert-warn{ outline:2px solid var(--warn); box-shadow:0 0 0 6px color-mix(in oklab, var(--warn) 22%, transparent) }
+  .alert-danger{ outline:3px solid var(--err); box-shadow:0 0 0 8px color-mix(in oklab, var(--err) 28%, transparent) }
 
-  /* Skeleton */
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
-    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
-  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
-    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
-    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
-  @media (prefers-reduced-motion: reduce){ .skeleton, .skel-img{ animation: none; background-position: 0 0; } }
+  /* Skeleton */
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  .skeleton{ border-radius:8px; min-height:18px; color:transparent !important;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+  .skel-img{ border:1px solid var(--border); border-radius:12px; width:100%; height:42vh;
+    background:linear-gradient(90deg, rgba(200,205,215,.15) 25%, rgba(200,205,215,.35) 37%, rgba(200,205,215,.15) 63%);
+    background-size:400% 100%; animation: shimmer 1.2s infinite linear; }
+  @media (prefers-reduced-motion: reduce){ .skeleton, .skel-img{ animation: none; background-position: 0 0; } }
 
-  /* Toast status (uses #status) */
-  #status{ position: fixed; bottom: 18px; right: 18px; z-index: 20; padding:10px 14px; background: var(--surface-glass); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); backdrop-filter: blur(8px) saturate(140%); }
+  /* Toast status (uses #status) */
+  #status{ position: fixed; bottom: 18px; right: 18px; z-index: 20; padding:10px 14px; background: var(--surface-glass); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); backdrop-filter: blur(8px) saturate(140%); }
 
-  /* Helpful spacing tweaks on small screens */
-  @media (max-width:640px){
-    .title{ font-size: clamp(1.1rem, 1rem + 1vw, 1.35rem) }
-    .k{ font-size: var(--step--1) }
-  }
+  /* Helpful spacing tweaks on small screens */
+  @media (max-width:640px){
+    .title{ font-size: clamp(1.1rem, 1rem + 1vw, 1.35rem) }
+    .k{ font-size: var(--step--1) }
+  }
 </style>
 </head>
 <body>
 <header class="site">
-  <div class="topbar">
-    <div class="brand"><div class="logo" aria-hidden="true"></div> Ficha de bobina</div>
-    <div class="muted" style="font-size: var(--step--1);">UI modernizada</div>
-  </div>
+  <div class="topbar">
+    <div class="brand"><div class="logo" aria-hidden="true"></div> Ficha de bobina</div>
+    <div class="muted" style="font-size: var(--step--1);">UI modernizada</div>
+  </div>
 </header>
 
 <div class="wrap">
-  <!-- FICHA DATOS -->
-  <section id="cardDatos" class="card" aria-labelledby="titleDatos">
-    <h1 class="title" id="titleDatos">
-      <span>FICHA BOBINA</span>
-      <span class="badge" id="badgeId">ID: —</span>
-    </h1>
-    <p class="subtitle">Consulta y edición rápida de los datos principales de la bobina.</p>
+    <section id="cardDatos" class="card" aria-labelledby="titleDatos">
+    <h1 class="title" id="titleDatos">
+      <span>FICHA BOBINA</span>
+      <span class="badge" id="badgeId">ID: —</span>
+    </h1>
+    <p class="subtitle">Consulta y edición rápida de los datos principales de la bobina.</p>
 
-    <div class="grid" role="list">
-      <div class="field" role="listitem">
-        <span class="k">CÓDIGO</span>
-        <span id="CODIGO" class="code-big skeleton" data-skel aria-live="polite"></span>
-        <span></span>
-      </div>
-      <div class="field" role="listitem">
-        <span class="k">DESCRIPCIÓN</span>
-        <span id="DESCRIPCION" class="skeleton" data-skel aria-live="polite"></span>
-        <span></span>
-      </div>
+    <div class="grid" role="list">
+      <div class="field" role="listitem">
+        <span class="k">CÓDIGO</span>
+        <span id="CODIGO" class="code-big skeleton" data-skel aria-live="polite"></span>
+        <span></span>
+      </div>
+      <div class="field" role="listitem">
+        <span class="k">DESCRIPCIÓN</span>
+        <span id="DESCRIPCION" class="skeleton" data-skel aria-live="polite"></span>
+        <span></span>
+      </div>
 
-      <!-- vertical: ingreso / cantidad / proveedor -->
-      <div class="field-col" role="group" aria-label="Ingreso, cantidad y proveedor">
-        <div class="field">
-          <span class="k">INGRESO</span>
-          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
-          <span></span>
-        </div>
-        <div class="field">
-          <span class="k">CANTIDAD</span>
-          <span id="CANTIDAD" class="qty-value skeleton" data-skel aria-live="polite"></span>
-          <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
-        </div>
-        <div id="editCantWrap" class="inline-edit" data-align="field">
-          <label for="editCantInput" class="k" style="min-width:unset">Nueva cantidad</label>
-          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
-          <button id="saveCantBtn" class="btn" type="button">Guardar</button>
-          <button id="cancelCantBtn" class="btn-ghost" type="button">Cancelar</button>
-          <span id="editCantStatus" class="muted" role="status" aria-live="polite"></span>
-        </div>
-        <div class="field">
-          <span class="k">PROVEEDOR</span>
-          <span id="PROVEEDOR" class="skeleton" data-skel></span>
-          <span></span>
-        </div>
-      </div>
+            <div class="field-col" role="group" aria-label="Ingreso, cantidad y proveedor">
+        <div class="field">
+          <span class="k">INGRESO</span>
+          <span id="FECHA_INGRESO" class="skeleton" data-skel></span>
+          <span></span>
+        </div>
+        <div class="field">
+          <span class="k">CANTIDAD</span>
+          <span id="CANTIDAD" class="qty-value skeleton" data-skel aria-live="polite"></span>
+          <button class="btn-ghost" id="editCantBtn" type="button" aria-expanded="false" aria-controls="editCantWrap">Editar</button>
+        </div>
+        <div id="editCantWrap" class="inline-edit" data-align="field">
+          <label for="editCantInput" class="k" style="min-width:unset">Nueva cantidad</label>
+          <input id="editCantInput" class="input" type="number" step="1" min="0" inputmode="numeric" />
+          <button id="saveCantBtn" class="btn" type="button">Guardar</button>
+          <button id="cancelCantBtn" class="btn-ghost" type="button">Cancelar</button>
+          <span id="editCantStatus" class="muted" role="status" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <span class="k">PROVEEDOR</span>
+          <span id="PROVEEDOR" class="skeleton" data-skel></span>
+          <span></span>
+        </div>
+      </div>
 
-      <div class="field">
-        <span class="k">UBICACIÓN</span>
-        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
-        <button class="btn-ghost" id="editUbicBtn" type="button" aria-expanded="false" aria-controls="editUbicWrap">Editar</button>
-      </div>
-      <div id="editUbicWrap" class="inline-edit" data-align="field">
-        <label for="editUbicInput" class="k" style="min-width:unset">Nueva ubicación</label>
-        <input id="editUbicInput" class="input" type="text" />
-        <button id="saveUbicBtn" class="btn" type="button">Guardar</button>
-        <button id="cancelUbicBtn" class="btn-ghost" type="button">Cancelar</button>
-        <span id="editUbicStatus" class="muted" role="status" aria-live="polite"></span>
-      </div>
+      <div class="field">
+        <span class="k">UBICACIÓN</span>
+        <span id="UBICACION_ALMACEN" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editUbicBtn" type="button" aria-expanded="false" aria-controls="editUbicWrap">Editar</button>
+      </div>
+      <div id="editUbicWrap" class="inline-edit" data-align="field">
+        <label for="editUbicInput" class="k" style="min-width:unset">Nueva ubicación</label>
+        <input id="editUbicInput" class="input" type="text" />
+        <button id="saveUbicBtn" class="btn" type="button">Guardar</button>
+        <button id="cancelUbicBtn" class="btn-ghost" type="button">Cancelar</button>
+        <span id="editUbicStatus" class="muted" role="status" aria-live="polite"></span>
+      </div>
 
-      <div class="field">
-        <span class="k">ESTADO</span>
-        <span id="ESTADO" class="skeleton" data-skel></span>
-        <button class="btn-ghost" id="editEstadoBtn" type="button" aria-expanded="false" aria-controls="editEstadoWrap">Editar</button>
-      </div>
-      <div id="editEstadoWrap" class="inline-edit" data-align="field">
-        <label for="editEstadoInput" class="k" style="min-width:unset">Estado</label>
-        <select id="editEstadoInput" class="input">
-          <option value="">—</option>
-          <option value="ALMACEN">ALMACEN</option>
-          <option value="LINEA">LINEA</option>
-          <option value="BAJA">BAJA</option>
-        </select>
-        <button id="saveEstadoBtn" class="btn" type="button">Guardar</button>
-        <button id="cancelEstadoBtn" class="btn-ghost" type="button">Cancelar</button>
-        <span id="editEstadoStatus" class="muted" role="status" aria-live="polite"></span>
-      </div>
+      <div class="field">
+        <span class="k">ESTADO</span>
+        <span id="ESTADO" class="skeleton" data-skel></span>
+        <button class="btn-ghost" id="editEstadoBtn" type="button" aria-expanded="false" aria-controls="editEstadoWrap">Editar</button>
+      </div>
+      <div id="editEstadoWrap" class="inline-edit" data-align="field">
+        <label for="editEstadoInput" class="k" style="min-width:unset">Estado</label>
+        <select id="editEstadoInput" class="input">
+          <option value="">—</option>
+          <option value="ALMACEN">ALMACEN</option>
+          <option value="LINEA">LINEA</option>
+          <option value="BAJA">BAJA</option>
+        </select>
+        <button id="saveEstadoBtn" class="btn" type="button">Guardar</button>
+        <button id="cancelEstadoBtn" class="btn-ghost" type="button">Cancelar</button>
+        <span id="editEstadoStatus" class="muted" role="status" aria-live="polite"></span>
+      </div>
 
-      <!-- Ver más -->
-      <details>
-        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
-        <div class="grid" style="margin-top:8px">
-          <div class="field"><span class="k">FECHA DEVOLUCIÓN</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span><span></span></div>
-          <div class="field"><span class="k">ÚLTIMA LÍNEA</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span><span></span></div>
-          <div class="field"><span class="k">OBSERVACIÓN</span> <span id="OBSERVACION" class="skeleton" data-skel></span><span></span></div>
-        </div>
-      </details>
-    </div>
-  </section>
+            <details>
+        <summary><span class="caret">▶</span> <b>Ver más</b></summary>
+        <div class="grid" style="margin-top:8px">
+          <div class="field"><span class="k">FECHA DEVOLUCIÓN</span> <span id="FECHA_DEVOLUCION" class="skeleton" data-skel></span><span></span></div>
+          <div class="field"><span class="k">ÚLTIMA LÍNEA</span> <span id="ULTIMA_LINEA" class="skeleton" data-skel></span><span></span></div>
+          <div class="field"><span class="k">OBSERVACIÓN</span> <span id="OBSERVACION" class="skeleton" data-skel></span><span></span></div>
+        </div>
+      </details>
+    </div>
+  </section>
 
-  <!-- FICHA IMAGEN -->
-  <section class="card" aria-labelledby="titleImg">
-    <h2 class="title" id="titleImg">Imagen</h2>
-    <p class="subtitle">Vista rápida de la etiqueta (se oculta si la URL no responde).</p>
-    <div id="imgSkel" class="skel-img" aria-hidden="true"></div>
-    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" hidden loading="lazy" referrerpolicy="no-referrer" />
-    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
-    <div id="imgLinkWrap" style="margin-top:6px"></div>
-  </section>
+    <section class="card" aria-labelledby="titleImg">
+    <h2 class="title" id="titleImg">Imagen</h2>
+    <p class="subtitle">Vista rápida de la etiqueta (se oculta si la URL no responde).</p>
+    <div id="imgSkel" class="skel-img" aria-hidden="true"></div>
+    <img id="imgEtiqueta" class="hero-img" alt="Etiqueta" hidden loading="lazy" />
+    <div id="imgStatus" class="muted" style="margin-top:8px"></div>
+    <div id="imgLinkWrap" style="margin-top:6px"></div>
+  </section>
 
-  <!-- FICHA DEVOLUCIÓN -->
-  <section class="card" aria-labelledby="titleDev">
-    <h2 class="title" id="titleDev">Cargar devolución</h2>
-    <div class="grid" style="gap:10px">
-      <div class="field">
-        <label class="k" for="devCant">Cantidad devuelta</label>
-        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
-        <span></span>
-      </div>
-      <div class="field">
-        <label class="k" for="devLinea">Línea</label>
-        <select id="devLinea" class="input" aria-label="Línea">
-          <option value="">Línea…</option>
-          <option value="L0">L0</option>
-          <option value="L1">L1</option>
-          <option value="L2">L2</option>
-          <option value="TM">TM</option>
-        </select>
-        <span></span>
-      </div>
-      <div class="field">
-        <label class="k" for="devUsuario">Usuario</label>
-        <select id="devUsuario" class="input" aria-label="Usuario">
-          <option value="">Usuario…</option>
-          <option>Noe</option>
-          <option>Miguel</option>
-          <option>Marcelo</option>
-          <option>Carlos</option>
-          <option>Cande</option>
-        </select>
-        <span></span>
-      </div>
-      <div class="field">
-        <label class="k" for="devObs">Observación</label>
-        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
-        <span></span>
-      </div>
-      <div class="field">
-        <span class="k" aria-hidden="true"></span>
-        <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
-          <button id="sendDevBtn" class="btn" type="button">Enviar devolución</button>
-          <button class="btn-ghost" type="reset" onclick="document.getElementById('devCant').value='';document.getElementById('devLinea').value='';document.getElementById('devUsuario').value='';document.getElementById('devObs').value='';">Limpiar</button>
-        </div>
-        <span id="devStatus" class="muted" role="status" aria-live="polite"></span>
-      </div>
-    </div>
-  </section>
+    <section class="card" aria-labelledby="titleDev">
+    <h2 class="title" id="titleDev">Cargar devolución</h2>
+    <div class="grid" style="gap:10px">
+      <div class="field">
+        <label class="k" for="devCant">Cantidad devuelta</label>
+        <input id="devCant" class="input" type="number" min="0" step="1" placeholder="Cantidad devuelta" inputmode="numeric" />
+        <span></span>
+      </div>
+      <div class="field">
+        <label class="k" for="devLinea">Línea</label>
+        <select id="devLinea" class="input" aria-label="Línea">
+          <option value="">Línea…</option>
+          <option value="L0">L0</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="TM">TM</option>
+        </select>
+        <span></span>
+      </div>
+      <div class="field">
+        <label class="k" for="devUsuario">Usuario</label>
+        <select id="devUsuario" class="input" aria-label="Usuario">
+          <option value="">Usuario…</option>
+          <option>Noe</option>
+          <option>Miguel</option>
+          <option>Marcelo</option>
+          <option>Carlos</option>
+          <option>Cande</option>
+        </select>
+        <span></span>
+      </div>
+      <div class="field">
+        <label class="k" for="devObs">Observación</label>
+        <textarea id="devObs" class="input" rows="2" placeholder="Observación (opcional)"></textarea>
+        <span></span>
+      </div>
+      <div class="field">
+        <span class="k" aria-hidden="true"></span>
+        <div style="display:flex; gap:.6rem; flex-wrap:wrap;">
+          <button id="sendDevBtn" class="btn" type="button">Enviar devolución</button>
+          <button class="btn-ghost" type="reset" onclick="document.getElementById('devCant').value='';document.getElementById('devLinea').value='';document.getElementById('devUsuario').value='';document.getElementById('devObs').value='';">Limpiar</button>
+        </div>
+        <span id="devStatus" class="muted" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </section>
 
-  <!-- estado global (toast) -->
-  <div id="status" class="muted" hidden></div>
+    <div id="status" class="muted" hidden></div>
 </div>
 
 <script>
 /* =========================
-   CFG
-   ========================= */
+   CFG
+   ========================= */
 const CFG = {
-  GET_BOBINA_URL:  'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s&',
-  POST_UPDATE_URL: '/api/update',
-  POST_DEV_URL:    '/api/devolucion'
+  GET_BOBINA_URL:  'https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R6dS5rvD25s&',
+  POST_UPDATE_URL: '/api/update',
+  POST_DEV_URL:    '/api/devolucion'
 };
 
 /* ====== helpers ====== */
 const qs = (n)=>new URLSearchParams(location.search).get(n);
 function showStatus(msg, isError=false){
-  const el = document.getElementById('status'); if(!el) return;
-  el.hidden = false; el.innerHTML = isError ? `<span class="err">${msg}</span>` : msg;
-  clearTimeout(showStatus._t); showStatus._t = setTimeout(()=>{ el.hidden = true; }, 3200);
+  const el = document.getElementById('status'); if(!el) return;
+  el.hidden = false; el.innerHTML = isError ? `<span class="err">${msg}</span>` : msg;
+  clearTimeout(showStatus._t); showStatus._t = setTimeout(()=>{ el.hidden = true; }, 3200);
 }
 function hideStatus(){ const el=document.getElementById('status'); if(!el) return; el.hidden = true; el.innerHTML=''; }
 function setLoading(btn,on,labelBusy){
-  if(!btn) return;
-  if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; }
-  else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; delete btn.dataset.label; }
+  if(!btn) return;
+  if(on){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent=labelBusy||'Procesando…'; }
+  else { btn.disabled=false; btn.textContent=btn.dataset.label||btn.textContent; delete btn.dataset.label; }
 }
 function excelSerialToDMY(v){
-  const n=Number(v); if(!isFinite(n)||n<=0) return (v||'');
-  const d=new Date(Math.round((n-25569)*86400*1000));
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mm=String(d.getMonth()+1).padStart(2,'0');
-  const yy=d.getFullYear();
-  return `${dd}/${mm}/${yy}`;
+  const n=Number(v); if(!isFinite(n)||n<=0) return (v||'');
+  const d=new Date(Math.round((n-25569)*86400*1000));
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
 }
 function parseDateMaybe(x){
-  if(x==null||x==='') return null;
-  if(/^\d+(\.\d+)?$/.test(String(x))){ const t=Math.round((Number(x)-25569)*86400*1000); return new Date(t); }
-  const d=new Date(x); return isNaN(d)?null:d;
+  if(x==null||x==='') return null;
+  if(/^\d+(\.\d+)?$/.test(String(x))){ const t=Math.round((Number(x)-25569)*86400*1000); return new Date(t); }
+  const d=new Date(x); return isNaN(d)?null:d;
 }
 function yearsDiff(a,b){ return (b-a)/(365.25*24*3600*1000); }
 
-/* SharePoint URL normalizer + download.aspx conversion + fallback proxy */
+/* SharePoint URL normalizer */
 function normSP(u){
-  if(!u) return u;
-  u = u.replace(/%2520/g,'%20'); // doble encode de espacios
-  try{
-    const url = new URL(u);
+  if(!u) return u;
+  u = u.replace(/%2520/g,'%20'); // doble encode de espacios
+  try{
+    const url = new URL(u);
+    // Asumiendo que el sitio es constante según tu ejemplo de URL
+    const sitePath = '/sites/ALMACENPRE-PRODUCCION'; 
 
-    // Short links: /:u:/, /:i:/, /:x:/  -> usar download.aspx con SourceUrl
-    if (url.hostname.includes('sharepoint.com') &&
-        (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/'))) {
-      const sitePath = '/sites/ALMACENPRE-PRODUCCION'; // ajustá si cambia el sitio
-      return `${url.origin}${sitePath}/_layouts/15/download.aspx?SourceUrl=${encodeURIComponent(u)}`;
-    }
+    // Short links: /:u:/, /:i:/, /:x:/ -> usar download.aspx con SourceUrl
+    if (url.hostname.includes('sharepoint.com') &&
+        (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/'))) {
+      return `${url.origin}${sitePath}/_layouts/15/download.aspx?SourceUrl=${encodeURIComponent(u)}`;
+    }
 
-    // Vistas de librería (Forms/AllItems.aspx) -> mismo patrón
-    if (url.pathname.includes('/Forms/AllItems.aspx')){
-      const idParam = url.searchParams.get('id');
-      if(idParam){
-        const decoded = decodeURIComponent(idParam);
-        const base = url.origin + '/sites/ALMACENPRE-PRODUCCION/_layouts/15/download.aspx?SourceUrl=';
-        return base + encodeURIComponent(decoded);
-      }
-    }
+    // Vistas de librería (Forms/AllItems.aspx) -> mismo patrón
+    if (url.pathname.includes('/Forms/AllItems.aspx')){
+      const idParam = url.searchParams.get('id');
+      if(idParam){
+        const decoded = decodeURIComponent(idParam);
+        const base = url.origin + `${sitePath}/_layouts/15/download.aspx?SourceUrl=`;
+        return base + encodeURIComponent(decoded);
+      }
+    }
 
-    // Si nada de lo anterior, probá con download=1
-    if(!url.searchParams.has('download')) url.searchParams.set('download','1');
-    return url.toString();
-  }catch{ return u; }
+    // Si nada de lo anterior, probá con download=1
+    if(!url.searchParams.has('download')) url.searchParams.set('download','1');
+    return url.toString();
+  }catch{ return u; }
 }
 
 function toggleSkeleton(on=true){
-  document.querySelectorAll('[data-skel]').forEach(el=>{
-    if(on){ el.classList.add('skeleton'); el.textContent=' '; }
-    else { el.classList.remove('skeleton'); }
-  });
-  const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
+  document.querySelectorAll('[data-skel]').forEach(el=>{
+    if(on){ el.classList.add('skeleton'); el.textContent=' '; }
+    else { el.classList.remove('skeleton'); }
+  });
+  const sk=document.getElementById('imgSkel'); if(sk) sk.style.display = on ? 'block' : 'none';
 }
 
 /* ====== estado ====== */
@@ -382,169 +377,172 @@ let DATA = {};
 
 /* ====== render ====== */
 function render(d){
-  const g=(k,alts=[])=>{ if(d[k]!=null && d[k]!=='' ) return d[k]; for(const a of alts) if(d[a]!=null && d[a]!=='' ) return d[a]; return ''; };
+  const g=(k,alts=[])=>{ if(d[k]!=null && d[k]!=='' ) return d[k]; for(const a of alts) if(d[a]!=null && d[a]!=='' ) return d[a]; return ''; };
 
-  const idFila = g('ID_FILA');
-  const codigo = g('CODIGO',['CÓDIGO']);
-  const desc   = g('DESCRIPCION',['DESCRIPCIÓN']);
-  const fIng   = g('FECHA_INGRESO',['FECHA INGRESO']);
-  const cant   = g('CANTIDAD');
-  const prov   = g('PROVEEDOR');
-  const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
-  const est    = g('ESTADO');
-  const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
-  const linea  = g('ULTIMA_LINEA',['LINEA']);
-  const obs    = g('OBSERVACION',['OBSERVACIÓN']);
-  const imgURL = g('IMAGEN_URL');
+  const idFila = g('ID_FILA');
+  const codigo = g('CODIGO',['CÓDIGO']);
+  const desc   = g('DESCRIPCION',['DESCRIPCIÓN']);
+  const fIng   = g('FECHA_INGRESO',['FECHA INGRESO']);
+  const cant   = g('CANTIDAD');
+  const prov   = g('PROVEEDOR');
+  const ubi    = g('UBICACION_ALMACEN',['UBICACIÓN']);
+  const est    = g('ESTADO');
+  const fDev   = g('FECHA_DEVOLUCION',['FECHA DEVOLUCIÓN']);
+  const linea  = g('ULTIMA_LINEA',['LINEA']);
+  const obs    = g('OBSERVACION',['OBSERVACIÓN']);
+  const imgURL = g('IMAGEN_URL');
 
-  // título
-  const badge = document.getElementById('badgeId'); if(badge) badge.textContent = `ID: ${idFila||'—'}`;
+  // título
+  const badge = document.getElementById('badgeId'); if(badge) badge.textContent = `ID: ${idFila||'—'}`;
 
-  // básicos
-  const setTxt = (id,val)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = val; el.classList.remove('skeleton'); };
-  setTxt('CODIGO', codigo||'—');
-  setTxt('DESCRIPCION', desc||'—');
-  setTxt('CANTIDAD', (cant??'')===''?'—':String(cant));
-  setTxt('PROVEEDOR', prov||'—');
-  setTxt('UBICACION_ALMACEN', ubi||'—');
-  setTxt('ESTADO', est||'—');
-  setTxt('ULTIMA_LINEA', linea||'—');
-  setTxt('OBSERVACION', obs||'—');
+  // básicos
+  const setTxt = (id,val)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = val; el.classList.remove('skeleton'); };
+  setTxt('CODIGO', codigo||'—');
+  setTxt('DESCRIPCION', desc||'—');
+  setTxt('CANTIDAD', (cant??'')===''?'—':String(cant));
+  setTxt('PROVEEDOR', prov||'—');
+  setTxt('UBICACION_ALMACEN', ubi||'—');
+  setTxt('ESTADO', est||'—');
+  setTxt('ULTIMA_LINEA', linea||'—');
+  setTxt('OBSERVACION', obs||'—');
 
-  // fechas
-  const fmt = v => (/^\d+(\.\d+)?$/.test(String(v))) ? excelSerialToDMY(v) : (v||'—');
-  setTxt('FECHA_INGRESO', fmt(fIng));
-  setTxt('FECHA_DEVOLUCION', fmt(fDev));
+  // fechas
+  const fmt = v => (/^\d+(\.\d+)?$/.test(String(v))) ? excelSerialToDMY(v) : (v||'—');
+  setTxt('FECHA_INGRESO', fmt(fIng));
+  setTxt('FECHA_DEVOLUCION', fmt(fDev));
 
-  // alertas: BAJA (fuerte) / antigüedad (tenue)
-  const card = document.getElementById('cardDatos');
-  if(card){
-    card.classList.remove('alert-warn','alert-danger');
-    if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
-    else {
-      const di=parseDateMaybe(fIng);
-      if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); }
-    }
-  }
+  // alertas: BAJA (fuerte) / antigüedad (tenue)
+  const card = document.getElementById('cardDatos');
+  if(card){
+    card.classList.remove('alert-warn','alert-danger');
+    if(String(est).toUpperCase()==='BAJA'){ card.classList.add('alert-danger'); }
+    else {
+      const di=parseDateMaybe(fIng);
+      if(di && yearsDiff(di,new Date())>=2){ card.classList.add('alert-warn'); }
+    }
+  }
 
-  // imagen con skeleton + fallback proxy
-  const imgEl = document.getElementById('imgEtiqueta');
-  const imgSk = document.getElementById('imgSkel');
-  const imgStatus = document.getElementById('imgStatus');
-  const linkW = document.getElementById('imgLinkWrap');
-  if(linkW) linkW.innerHTML = '';
-  if(imgStatus) imgStatus.textContent = '';
+  // imagen con skeleton
+  const imgEl = document.getElementById('imgEtiqueta');
+  const imgSk = document.getElementById('imgSkel');
+  const imgStatus = document.getElementById('imgStatus');
+  const linkW = document.getElementById('imgLinkWrap');
+  if(linkW) linkW.innerHTML = '';
+  if(imgStatus) imgStatus.textContent = '';
+  // Limpiar el estado de proxy al recargar los datos
+  imgEl.removeAttribute('data-tried-proxy');
 
-  if (imgURL && imgEl){
-    const original = imgURL;
-    const u = normSP(original);
-    if(imgSk) imgSk.style.display='block';
-    imgEl.hidden = true;
 
-    imgEl.onload = ()=>{
-      if(imgSk) imgSk.style.display='none';
-      imgEl.hidden=false;
-      if(imgStatus) imgStatus.textContent='';
-    };
-    imgEl.onerror = ()=>{
-      if(imgSk) imgSk.style.display='none';
-      // Reintento una vez vía proxy
-      if(!imgEl.dataset.triedProxy){
-        imgEl.dataset.triedProxy = '1';
-        imgEl.src = `/api/img?u=${encodeURIComponent(original)}`;
-      }else{
-        imgEl.hidden = true;
-        if(imgStatus) imgStatus.textContent='No disponible';
-      }
-    };
-    imgEl.src = u;
+  if (imgURL && imgEl){
+    const original = imgURL;
+    const u = normSP(original);
+    if(imgSk) imgSk.style.display='block';
+    imgEl.hidden = true;
 
-    if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
-  }else{
-    if(imgSk) imgSk.style.display='none';
-    if(imgEl) imgEl.hidden = true;
-    if(imgStatus) imgStatus.textContent='No disponible';
-  }
+    imgEl.onload = ()=>{
+      if(imgSk) imgSk.style.display='none';
+      imgEl.hidden=false;
+      if(imgStatus) imgStatus.textContent='';
+    };
+    imgEl.onerror = ()=>{
+      if(imgSk) imgSk.style.display='none';
+      // Si falla la carga directa, intenta el proxy si lo implementás
+      // if(!imgEl.dataset.triedProxy){
+      //   imgEl.dataset.triedProxy = '1';
+      //   imgEl.src = `/api/img?u=${encodeURIComponent(original)}`;
+      // }else{
+        imgEl.hidden = true;
+        if(imgStatus) imgStatus.textContent='No disponible (requiere iniciar sesión en Sharepoint)';
+      // }
+    };
+    imgEl.src = u;
 
-  // preparar inputs
-  const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
-  const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
+    if(linkW) linkW.innerHTML = `<a href="${u}" target="_blank" rel="noreferrer">Abrir imagen completa</a>`;
+  }else{
+    if(imgSk) imgSk.style.display='none';
+    if(imgEl) imgEl.hidden = true;
+    if(imgStatus) imgStatus.textContent='No disponible';
+  }
 
-  // Estado: limpiar y forzar selección (con opción temporal si no coincide)
-  const ie=document.getElementById('editEstadoInput');
-  if(ie){
-    const clean = (s)=> s
-      .replace(/[\u00A0\u2000-\u200B]/g,' ')   // espacios unicode
-      .replace(/[\r\n\t]+/g,' ')             // saltos
-      .replace(/\s\s+/g,' ')                 // colapsar
-      .trim();
+  // preparar inputs
+  const ic=document.getElementById('editCantInput'); if(ic) ic.value = cant || 0;
+  const iu=document.getElementById('editUbicInput'); if(iu) iu.value = ubi || '';
 
-    const originalRaw = (est ?? '').toString();
-    const original = clean(originalRaw);
+  // Estado: limpiar y forzar selección (con opción temporal si no coincide)
+  const ie=document.getElementById('editEstadoInput');
+  if(ie){
+    const clean = (s)=> s
+      .replace(/[\u00A0\u2000-\u200B]/g,' ')   // espacios unicode
+      .replace(/[\r\n\t]+/g,' ')             // saltos
+      .replace(/\s\s+/g,' ')                 // colapsar
+      .trim();
 
-    if(original){
-      const norm = (original.normalize ? original.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : original).toUpperCase();
-      const known = new Set(['ALMACEN','LINEA','BAJA']);
-      if(known.has(norm)){
-        ie.value = norm;
-      }else{
-        // opción temporal en el índice 0
-        if(!ie.options.length || ie.options[0].dataset.temp !== '1'){
-          ie.insertBefore(new Option(original, original), ie.options[0] || null);
-          ie.options[0].dataset.temp = '1';
-        }else{
-          ie.options[0].text = original;
-          ie.options[0].value = original;
-        }
-        ie.selectedIndex = 0;
-      }
-    }else{
-      ie.value = '';
-    }
-  }
+    const originalRaw = (est ?? '').toString();
+    const original = clean(originalRaw);
+
+    if(original){
+      const norm = (original.normalize ? original.normalize('NFD').replace(/[\u0300-\u036f]/g,'') : original).toUpperCase();
+      const known = new Set(['ALMACEN','LINEA','BAJA']);
+      if(known.has(norm)){
+        ie.value = norm;
+      }else{
+        // opción temporal en el índice 0
+        if(!ie.options.length || ie.options[0].dataset.temp !== '1'){
+          ie.insertBefore(new Option(original, original), ie.options[0] || null);
+          ie.options[0].dataset.temp = '1';
+        }else{
+          ie.options[0].text = original;
+          ie.options[0].value = original;
+        }
+        ie.selectedIndex = 0;
+      }
+    }else{
+      ie.value = '';
+    }
+  }
 }
 
 /* ====== fetch ====== */
 async function getBobina(id){
-  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_=${Date.now()}`;
-  const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
-  const txt = await r.text();
-  let data; try{ data=JSON.parse(txt) }catch{ data=null }
-  if(!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,220)}`);
-  if(!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,220)}`);
-  if(data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
-  return data;
+  const url = `${CFG.GET_BOBINA_URL}id=${encodeURIComponent(id)}&_=${Date.now()}`;
+  const r = await fetch(url, { headers:{Accept:'application/json'}, cache:'no-store' });
+  const txt = await r.text();
+  let data; try{ data=JSON.parse(txt) }catch{ data=null }
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0,220)}`);
+  if(!data) throw new Error(`Respuesta no es JSON: ${txt.slice(0,220)}`);
+  if(data.error) throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+  return data;
 }
 async function postUpdate(payload){
-  const r = await fetch(CFG.POST_UPDATE_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
-  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
+  const r = await fetch(CFG.POST_UPDATE_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 async function postDevolucion(payload){
-  const r = await fetch(CFG.POST_DEV_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
-  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
+  const r = await fetch(CFG.POST_DEV_URL, { method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'}, body:JSON.stringify(payload) });
+  const t = await r.text(); if(!r.ok) throw new Error(`HTTP ${r.status}: ${t.slice(0,220)}`); return t;
 }
 
 /* ====== main ====== */
 async function main(){
-  const id = qs('id'); if(!id){ showStatus("Falta parámetro 'id'", true); return; }
-  toggleSkeleton(true); showStatus('Cargando ficha…');
-  try{ DATA = await getBobina(id); render(DATA); hideStatus(); }
-  catch(e){ showStatus(e?.message||'Error al cargar', true); }
-  finally{ toggleSkeleton(false); }
+  const id = qs('id'); if(!id){ showStatus("Falta parámetro 'id'", true); return; }
+  toggleSkeleton(true); showStatus('Cargando ficha…');
+  try{ DATA = await getBobina(id); render(DATA); hideStatus(); }
+  catch(e){ showStatus(e?.message||'Error al cargar', true); }
+  finally{ toggleSkeleton(false); }
 }
 
 /* ====== toggles (abrir/cerrar por clase) ====== */
 function toggleBlock(btnId, wrapId){
-  const btn = document.getElementById(btnId);
-  const wrap = document.getElementById(wrapId);
-  if(!btn || !wrap) return;
-  const willOpen = !wrap.classList.contains('is-open');
-  wrap.classList.toggle('is-open', willOpen);
-  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-  if (willOpen){
-    const first = wrap.querySelector('input,select,textarea,button');
-    if(first){ setTimeout(()=>{ first.focus(); first.select && first.select(); }, 0); }
-  }
+  const btn = document.getElementById(btnId);
+  const wrap = document.getElementById(wrapId);
+  if(!btn || !wrap) return;
+  const willOpen = !wrap.classList.contains('is-open');
+  wrap.classList.toggle('is-open', willOpen);
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  if (willOpen){
+    const first = wrap.querySelector('input,select,textarea,button');
+    if(first){ setTimeout(()=>{ first.focus(); first.select && first.select(); }, 0); }
+  }
 }
 
 /* ====== eventos (editar/guardar) ====== */
@@ -553,100 +551,100 @@ const E = (id)=>document.getElementById(id);
 E('editCantBtn').onclick = ()=> toggleBlock('editCantBtn','editCantWrap');
 E('cancelCantBtn').onclick = ()=>{ E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false'); E('editCantStatus').textContent=''; };
 E('saveCantBtn').onclick = async ()=>{
-  const btnId='saveCantBtn'; const btn=E(btnId);
-  const st=E('editCantStatus'); st.textContent='';
-  const v=Number(E('editCantInput').value);
-  if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } });
-    st.innerHTML='<span class="ok">Guardado.</span>';
-    // cerrar antes de recargar
-    E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false');
-    await main();
-  }catch(err){
-    st.innerHTML=`<span class="err">${err.message||err}</span>`;
-    // reabrir si falló
-    E('editCantWrap').classList.add('is-open'); E('editCantBtn').setAttribute('aria-expanded','true');
-  }finally{
-    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
-  }
+  const btnId='saveCantBtn'; const btn=E(btnId);
+  const st=E('editCantStatus'); st.textContent='';
+  const v=Number(E('editCantInput').value);
+  if(isNaN(v)||v<0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ CANTIDAD:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    // cerrar antes de recargar
+    E('editCantWrap').classList.remove('is-open'); E('editCantBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    // reabrir si falló
+    E('editCantWrap').classList.add('is-open'); E('editCantBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 E('editUbicBtn').onclick = ()=> toggleBlock('editUbicBtn','editUbicWrap');
 E('cancelUbicBtn').onclick = ()=>{ E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false'); E('editUbicStatus').textContent=''; };
 E('saveUbicBtn').onclick = async ()=>{
-  const btnId='saveUbicBtn'; const btn=E(btnId);
-  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim();
-  if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } });
-    st.innerHTML='<span class="ok">Guardado.</span>';
-    E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false');
-    await main();
-  }catch(err){
-    st.innerHTML=`<span class="err">${err.message||err}</span>`;
-    E('editUbicWrap').classList.add('is-open'); E('editUbicBtn').setAttribute('aria-expanded','true');
-  }finally{
-    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
-  }
+  const btnId='saveUbicBtn'; const btn=E(btnId);
+  const st=E('editUbicStatus'); const v=(E('editUbicInput').value||'').trim();
+  if(!v){ st.innerHTML='<span class="err">Ingresá una ubicación.</span>'; return; }
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ UBICACION_ALMACEN:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    E('editUbicWrap').classList.remove('is-open'); E('editUbicBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    E('editUbicWrap').classList.add('is-open'); E('editUbicBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 E('editEstadoBtn').onclick = ()=> toggleBlock('editEstadoBtn','editEstadoWrap');
 E('cancelEstadoBtn').onclick = ()=>{ E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false'); E('editEstadoStatus').textContent=''; };
 E('saveEstadoBtn').onclick = async ()=>{
-  const btnId='saveEstadoBtn'; const btn=E(btnId);
-  const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
-  try{
-    setLoading(btn,true,'Guardando…');
-    await postUpdate({ id: qs('id'), updates:{ ESTADO:v } });
-    st.innerHTML='<span class="ok">Guardado.</span>';
-    E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false');
-    await main();
-  }catch(err){
-    st.innerHTML=`<span class="err">${err.message||err}</span>`;
-    E('editEstadoWrap').classList.add('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','true');
-  }finally{
-    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
-  }
+  const btnId='saveEstadoBtn'; const btn=E(btnId);
+  const st=E('editEstadoStatus'); const v=E('editEstadoInput').value;
+  try{
+    setLoading(btn,true,'Guardando…');
+    await postUpdate({ id: qs('id'), updates:{ ESTADO:v } });
+    st.innerHTML='<span class="ok">Guardado.</span>';
+    E('editEstadoWrap').classList.remove('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','false');
+    await main();
+  }catch(err){
+    st.innerHTML=`<span class="err">${err.message||err}</span>`;
+    E('editEstadoWrap').classList.add('is-open'); E('editEstadoBtn').setAttribute('aria-expanded','true');
+  }finally{
+    const b=E(btnId); if(b){ b.disabled=false; b.textContent='Guardar'; delete b.dataset.label; }
+  }
 };
 
 /* ====== devolución ====== */
 E('sendDevBtn').onclick = async (ev)=>{
-  const st=E('devStatus'); st.textContent='';
-  const cantidad = Number(E('devCant').value);
-  const linea = E('devLinea').value;
-  const usuario = E('devUsuario').value;
-  const observacion = (E('devObs').value||'').trim();
-  if(isNaN(cantidad)||cantidad<=0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
-  if(!linea){ st.innerHTML='<span class="err">Elegí una línea.</span>'; return; }
-  if(!usuario){ st.innerHTML='<span class="err">Elegí un usuario.</span>'; return; }
+  const st=E('devStatus'); st.textContent='';
+  const cantidad = Number(E('devCant').value);
+  const linea = E('devLinea').value;
+  const usuario = E('devUsuario').value;
+  const observacion = (E('devObs').value||'').trim();
+  if(isNaN(cantidad)||cantidad<=0){ st.innerHTML='<span class="err">Cantidad inválida.</span>'; return; }
+  if(!linea){ st.innerHTML='<span class="err">Elegí una línea.</span>'; return; }
+  if(!usuario){ st.innerHTML='<span class="err">Elegí un usuario.</span>'; return; }
 
-  try{
-    setLoading(ev.currentTarget,true,'Enviando…');
-    localStorage.setItem('lastUser', usuario);
-    localStorage.setItem('lastLinea', linea);
-    await postDevolucion({ id: qs('id'), cantidad_devuelta:cantidad, linea, observacion, usuario });
-    st.innerHTML='<span class="ok">Devolución registrada.</span>';
-    E('devCant').value=''; E('devLinea').value=''; E('devUsuario').value=''; E('devObs').value='';
-    await main();
-  }catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
-  finally{ setLoading(ev.currentTarget,false); }
+  try{
+    setLoading(ev.currentTarget,true,'Enviando…');
+    localStorage.setItem('lastUser', usuario);
+    localStorage.setItem('lastLinea', linea);
+    await postDevolucion({ id: qs('id'), cantidad_devuelta:cantidad, linea, observacion, usuario });
+    st.innerHTML='<span class="ok">Devolución registrada.</span>';
+    E('devCant').value=''; E('devLinea').value=''; E('devUsuario').value=''; E('devObs').value='';
+    await main();
+  }catch(err){ st.innerHTML=`<span class="err">${err.message||err}</span>`; }
+  finally{ setLoading(ev.currentTarget,false); }
 };
 
 /* precarga usuario/línea preferidos */
 (function(){
-  const u=localStorage.getItem('lastUser'); if(u) { const el=E('devUsuario'); if(el) el.value=u; }
-  const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
+  const u=localStorage.getItem('lastUser'); if(u) { const el=E('devUsuario'); if(el) el.value=u; }
+  const l=localStorage.getItem('lastLinea'); if(l){ const el=E('devLinea'); if(el) el.value=l; }
 })();
 
 /* go: cerrar paneles al cargar y render */
 (function ensureClosedOnLoad(){
-  ['editCantWrap','editUbicWrap','editEstadoWrap'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.classList.remove('is-open');
-  });
+  ['editCantWrap','editUbicWrap','editEstadoWrap'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.remove('is-open');
+  });
 })();
 main();
 </script>
