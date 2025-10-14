@@ -112,6 +112,12 @@
     .spacer{ height:4px }
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
+
+    /* ⬇️ NUEVO: contorno rojo cuando aplica la alerta */
+    .alerta-roja{
+      outline: 3px solid var(--danger);
+      box-shadow: 0 0 0 8px rgba(239,68,68,.24);
+    }
   </style>
 </head>
 <body>
@@ -178,27 +184,26 @@
     // GET:    /api/bobina?id=CQ1
     // UPDATE: /api/update
     // DEV:    /api/devolucion
-     const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
+    const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
+
     // ——— Helpers ———
     function getId() {
       const params = new URLSearchParams(window.location.search);
       const q = params.get('id');
       if (q) return q;
       const parts = window.location.pathname.split('/').filter(Boolean);
-      return parts[parts.length - 1] || null; // soporte /viewer.html?id=... y /bobina/:id (si en el futuro lo usás)
+      return parts[parts.length - 1] || null;
     }
 
     function normalizeSharePointImageUrl(u) {
       if (!u) return u;
-      u = u.replace(/%2520/g, '%20'); // corrige doble encode
+      u = u.replace(/%2520/g, '%20');
       try {
         const url = new URL(u);
-        // Links de compartición
         if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')) {
           if (!url.searchParams.has('download')) url.searchParams.set('download','1');
           return url.toString();
         }
-        // Vista de biblioteca -> descargar directo
         if (url.pathname.includes('/Forms/AllItems.aspx')) {
           const idParam = url.searchParams.get('id');
           if (idParam) {
@@ -215,13 +220,56 @@
       return `<div class="row"><b>${label}:</b> ${value ?? ''}</div>`;
     }
 
-    // Normaliza ESTADO para que el select lo reconozca
+    // ===== NUEVOS HELPERS para fechas/alerta =====
+    const stripDiacritics = (s)=> (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const normText = (s)=> stripDiacritics(String(s||'')).replace(/\s+/g,' ').trim().toUpperCase();
+
+    function parseDateFlexible(v){
+      if (v == null || v === '') return null;
+      const s = String(v).trim();
+      if (/^\d+(\.\d+)?$/.test(s)) {
+        // serie Excel
+        const t = Math.round((Number(s) - 25569) * 86400 * 1000);
+        const d = new Date(t);
+        return isNaN(d) ? null : d;
+      }
+      const d = new Date(s);
+      return isNaN(d) ? null : d;
+    }
+
+    function formatDMY(v){
+      const d = parseDateFlexible(v);
+      if (!d) return v || '—';
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yy = d.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+
+    function yearsDiff(a,b){ return (b - a) / (365.25 * 24 * 3600 * 1000); }
+
+    function applyAlert(fechaIngresoRaw, estadoRaw){
+      const cardEl = document.getElementById('card');
+      if (!cardEl) return;
+      let danger = false;
+
+      const d = parseDateFlexible(fechaIngresoRaw);
+      if (d && yearsDiff(d, new Date()) >= 2) danger = true;
+
+      const estN = normText(estadoRaw);
+      if (estN.startsWith('BLOQUE')) danger = true;
+
+      cardEl.classList.toggle('alerta-roja', danger);
+    }
+    // ===== FIN NUEVOS HELPERS =====
+
+    // Normaliza ESTADO para que el select lo reconozca (se mantiene igual)
     function normalizeEstado(s){
       if (s == null) return '';
       const t = String(s).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       if (['ALMACEN','ALMACEN ','DEPÓSITO','DEPOSITO','DEPOSITO '].includes(t)) return 'ALMACEN';
       if (['LINEA','EN LINEA','EN  LINEA','LÍNEA'].includes(t)) return 'LINEA';
-      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA'; // para mantener tu dropdown
+      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA';
       return String(s).trim();
     }
 
@@ -243,7 +291,6 @@
         const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '(seleccionar)'; input.appendChild(optEmpty);
         (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
 
-        // si el valor actual no coincide con opciones, lo agregamos para que quede seleccionado
         const current = (value ?? '').toString().trim();
         const norm = normalizeEstado(current);
         const has = Array.from(input.options).some(o => o.value === norm || o.value === current);
@@ -327,11 +374,10 @@
       try {
         statusEl.textContent = 'Consultando…';
 
-        // ⬅️ Netlify GET (query param)
         const r = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&t=${Date.now()}`, {
           cache: 'no-store',
           headers: { 'Accept': 'application/json' }
-         });
+        });
 
         const txt = await r.text();
         let data; try { data = JSON.parse(txt); } catch { data = { error:'parse_error', raw:txt }; }
@@ -341,21 +387,26 @@
           return;
         }
 
-        // Render ficha
         const get = (k, alts=[]) => {
           if (data[k] != null && data[k] !== '') return data[k];
           for (const a of alts) if (data[a] != null && data[a] !== '') return data[a];
           return '';
         };
 
+        // Valores crudos (para lógica) + formateo fechas para mostrar
+        const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
+        const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
+        const estadoRaw          = get('ESTADO');
+
         const itemsStatic = [
           ['ID_FILA', get('ID_FILA') || get('ID')],
           ['CÓDIGO', get('CODIGO', ['CÓDIGO'])],
           ['DESCRIPCIÓN', get('DESCRIPCION', ['DESCRIPCIÓN'])],
           ['PROVEEDOR', get('PROVEEDOR')],
-          ['FECHA INGRESO', get('FECHA_INGRESO', ['FECHA INGRESO']) || '—'],
+          // ⬇️ Fechas formateadas a dd/mm/yyyy
+          ['FECHA INGRESO', formatDMY(fechaIngresoRaw) || '—'],
           ['LOTE', get('LOTE')],
-          ['FECHA DEVOLUCIÓN', get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']) || '—'],
+          ['FECHA DEVOLUCIÓN', formatDMY(fechaDevolucionRaw) || '—'],
           ['LÍNEA', get('ULTIMA_LINEA', ['LINEA'])],
           ['OBSERVACIÓN', get('OBSERVACION', ['OBSERVACIÓN'])]
         ];
@@ -364,7 +415,7 @@
 
         // ===== Editables (Netlify endpoints) =====
         const guardarCambio = async (payload, status, afterOk) => {
-          const r = await fetch('/api/update', {             // ⬅️ Netlify UPDATE
+          const r = await fetch('/api/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -379,8 +430,8 @@
 
         async function refetchAndPatch() {
           const r2 = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&v=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Accept': 'application/json' }
+            cache: 'no-store',
+            headers: { 'Accept': 'application/json' }
           });
           const t2 = await r2.text();
           let d2; try { d2 = JSON.parse(t2); } catch { d2 = null; }
@@ -389,6 +440,9 @@
             document.getElementById('val-ubicacion_almacen') && (document.getElementById('val-ubicacion_almacen').textContent =
               d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICACIÓN'] || '');
             document.getElementById('val-estado') && (document.getElementById('val-estado').textContent = d2.ESTADO ?? '');
+
+            // actualizar alerta si cambió estado/fecha
+            applyAlert(d2.FECHA_INGRESO ?? d2['FECHA INGRESO'], d2.ESTADO);
           }
         }
 
@@ -416,16 +470,20 @@
           }
         }));
 
-        // ESTADO (con fallback si viene distinto)
+        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
-          value: get('ESTADO'),
+          value: estadoRaw,
           field: 'estado',
           type: 'select',
           options: ['ALMACEN', 'LINEA', 'BLOQUEADA'],
           onSave: async (newVal, status, done) => {
             if (!newVal) throw new Error('Seleccioná un estado');
-            await guardarCambio({ id, estado: newVal }, status, () => done());
+            await guardarCambio({ id, estado: newVal }, status, () => {
+              // actualizar alerta con el nuevo estado
+              applyAlert(fechaIngresoRaw, newVal);
+              done();
+            });
           }
         }));
 
@@ -435,10 +493,11 @@
           extraLinks.innerHTML = fieldRow('Ficha/Imagen', `<a href="${url}" target="_blank" rel="noreferrer">Abrir</a>`);
         }
 
+        // Mostrar tarjeta, esconder status
         cardEl.style.display = 'block';
         statusEl.style.display = 'none';
 
-        // Imagen (igual que vercel)
+        // Imagen
         const raw = get('IMAGEN_URL', ['IMAGEN URL']);
         if (raw) {
           const imgUrl = normalizeSharePointImageUrl(raw);
@@ -477,7 +536,7 @@
           Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
           try {
-            const rr = await fetch('/api/devolucion', {    // ⬅️ Netlify DEV
+            const rr = await fetch('/api/devolucion', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -494,6 +553,9 @@
             devStatus.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
           }
         });
+
+        // ⬅️ Aplicar alerta visual inicial
+        applyAlert(fechaIngresoRaw, estadoRaw);
 
       } catch (e) {
         const statusEl = document.getElementById('status');
