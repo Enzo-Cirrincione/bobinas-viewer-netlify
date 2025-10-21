@@ -746,7 +746,7 @@ function startScanner() {
     }
     Quagga.start();
 
-    const stream = Quagga.cameraAccess.getActiveStream();
+    const stream = Quagga.CameraAccess.getActiveStream();
     if (stream) currentTrack = stream.getVideoTracks()[0] || null;
 
     onDetectedHandler = function(result) {
