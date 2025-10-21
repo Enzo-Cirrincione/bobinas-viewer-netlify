@@ -71,6 +71,7 @@
       background: var(--card);
       padding:18px;
       box-shadow: var(--shadow);
+      transition: box-shadow .15s ease, outline-color .15s ease;
     }
     .title{
       margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:.2px;
@@ -113,61 +114,12 @@
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
 
-    /* ⬇️ NUEVO: contorno rojo cuando aplica la alerta */
+    /* 🚨 Contorno de alerta (>=2 años o BLOQUEADA/BLOQUEDA/…) */
     .alerta-roja{
       outline: 3px solid var(--danger);
-      box-shadow: 0 0 0 8px rgba(239,68,68,.24);
+      box-shadow: 0 0 0 8px color-mix(in oklab, var(--danger) 24%, transparent);
     }
-  /* === BEGIN ADD (ID panel + scanner) === */
-.idpanel-fab {
-  position: fixed; right: 16px; bottom: 16px; z-index: 40;
-  padding: 10px 14px; border-radius: 999px; font-weight: 700;
-  border: 1px solid rgba(255,255,255,.12);
-  background: #4da3ff; color: #0b0f14; cursor: pointer;
-  box-shadow: 0 10px 22px rgba(0,0,0,.35);
-}
-.idpanel-modal {
-  position: fixed; inset: 0; z-index: 50;
-  background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
-  display: none; align-items: center; justify-content: center;
-}
-.idpanel-card {
-  width: min(680px, 92vw); background: #121922; color: #e7edf5;
-  border: 1px solid #203040; border-radius: 14px; padding: 14px;
-  box-shadow: 0 18px 40px rgba(0,0,0,.45);
-}
-.idpanel-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.idpanel-title { margin:0; font-size: 16px; font-weight: 700; }
-.idpanel-body { display:flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-.idpanel-label { font-size: 12px; color: #8ea0b5; }
-.idpanel-row { display:flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.idpanel-input {
-  flex:1 1 240px; min-width: 180px;
-  background: transparent; color: #e7edf5;
-  border: 1px solid #203040; border-radius: 10px; padding: 8px 10px; outline: none;
-}
-.btn {
-  cursor: pointer; border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; font-weight: 600;
-  background: #4da3ff; color: #07111a;
-}
-.btn-ghost {
-  cursor: pointer; border: 1px dashed #203040; border-radius: 10px; padding: 8px 12px; color: #e7edf5; background: transparent;
-}
-.idpanel-help { margin: 0; font-size: 12px; color: #8ea0b5; }
-
-.scanner-viewport {
-  position: relative; width: 100%; height: min(60vh, 420px);
-  background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #203040;
-}
-.scanner-overlay {
-  position: absolute; inset: 0; pointer-events: none;
-  border: 2px dashed rgba(255,255,255,.25); border-radius: 12px;
-  box-shadow: inset 0 0 0 9999px rgba(0,0,0,.25);
-}
-.scanner-helpers { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 8px; }
-/* === END ADD === */
-
-</style>
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -229,12 +181,6 @@
   </div>
 
   <script>
-    // ===== Endpoints Netlify =====
-    // GET:    /api/bobina?id=CQ1
-    // UPDATE: /api/update
-    // DEV:    /api/devolucion
-    const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
-
     // ——— Helpers ———
     function getId() {
       const params = new URLSearchParams(window.location.search);
@@ -246,13 +192,15 @@
 
     function normalizeSharePointImageUrl(u) {
       if (!u) return u;
-      u = u.replace(/%2520/g, '%20');
+      u = u.replace(/%2520/g, '%20'); // corrige doble encode
       try {
         const url = new URL(u);
+        // Links de compartición
         if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')) {
           if (!url.searchParams.has('download')) url.searchParams.set('download','1');
           return url.toString();
         }
+        // Vista de biblioteca -> descargar directo
         if (url.pathname.includes('/Forms/AllItems.aspx')) {
           const idParam = url.searchParams.get('id');
           if (idParam) {
@@ -269,7 +217,7 @@
       return `<div class="row"><b>${label}:</b> ${value ?? ''}</div>`;
     }
 
-    // ===== NUEVOS HELPERS para fechas/alerta =====
+    // Normalizadores y fechas
     const stripDiacritics = (s)=> (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const normText = (s)=> stripDiacritics(String(s||'')).replace(/\s+/g,' ').trim().toUpperCase();
 
@@ -277,7 +225,7 @@
       if (v == null || v === '') return null;
       const s = String(v).trim();
       if (/^\d+(\.\d+)?$/.test(s)) {
-        // serie Excel
+        // Excel serial (base 1899-12-30/31)
         const t = Math.round((Number(s) - 25569) * 86400 * 1000);
         const d = new Date(t);
         return isNaN(d) ? null : d;
@@ -285,7 +233,6 @@
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
-
     function formatDMY(v){
       const d = parseDateFlexible(v);
       if (!d) return v || '—';
@@ -294,36 +241,10 @@
       const yy = d.getFullYear();
       return `${dd}/${mm}/${yy}`;
     }
-
     function yearsDiff(a,b){ return (b - a) / (365.25 * 24 * 3600 * 1000); }
 
-    function applyAlert(fechaIngresoRaw, estadoRaw){
-      const cardEl = document.getElementById('card');
-      if (!cardEl) return;
-      let danger = false;
-
-      const d = parseDateFlexible(fechaIngresoRaw);
-      if (d && yearsDiff(d, new Date()) >= 2) danger = true;
-
-      const estN = normText(estadoRaw);
-      if (estN.startsWith('BLOQUE')) danger = true;
-
-      cardEl.classList.toggle('alerta-roja', danger);
-    }
-    // ===== FIN NUEVOS HELPERS =====
-
-    // Normaliza ESTADO para que el select lo reconozca (se mantiene igual)
-    function normalizeEstado(s){
-      if (s == null) return '';
-      const t = String(s).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      if (['ALMACEN','ALMACEN ','DEPÓSITO','DEPOSITO','DEPOSITO '].includes(t)) return 'ALMACEN';
-      if (['LINEA','EN LINEA','EN  LINEA','LÍNEA'].includes(t)) return 'LINEA';
-      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA';
-      return String(s).trim();
-    }
-
-    // ——— Editable rows ———
-    function editableRow({ label, value, field, type = 'text', options = [], onSave }) {
+    // ——— Fila editable (texto o número) ———
+    function editableRow({ label, value, field, type = 'text', onSave }) {
       const row = document.createElement('div');
       row.className = 'row';
 
@@ -334,31 +255,11 @@
       btn.type = 'button'; btn.className = 'btn btn-ghost'; btn.textContent = 'Editar';
 
       const inputWrap = document.createElement('span'); inputWrap.style.display = 'none';
-      let input;
-      if (type === 'select') {
-        input = document.createElement('select'); input.className = 'input';
-        const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '(seleccionar)'; input.appendChild(optEmpty);
-        (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
-
-        const current = (value ?? '').toString().trim();
-        const norm = normalizeEstado(current);
-        const has = Array.from(input.options).some(o => o.value === norm || o.value === current);
-        if (current) {
-          if (!has) {
-            const opt = new Option(current, current);
-            input.add(opt);
-            input.value = current;
-          } else {
-            input.value = (Array.from(input.options).some(o=>o.value===norm) ? norm : current);
-          }
-        } else {
-          input.value = '';
-        }
-      } else {
-        input = document.createElement('input'); input.className = 'input'; input.type = (type === 'number') ? 'number' : 'text';
-        if (type === 'number') { input.min = '0'; input.step = '1'; }
-        input.value = value ?? '';
-      }
+      const input = document.createElement('input');
+      input.className = 'input';
+      input.type = (type === 'number') ? 'number' : 'text';
+      if (type === 'number') { input.min = '0'; input.step = '1'; }
+      input.value = value ?? '';
 
       const save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Guardar';
       const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn btn-ghost'; cancel.textContent = 'Cancelar';
@@ -379,7 +280,7 @@
         span.style.display = 'none';
         inputWrap.style.display = 'inline-flex';
         input.focus();
-        if (type !== 'select') input.select();
+        input.select();
       }
       function exitEdit() {
         btn.style.display = 'inline-block';
@@ -422,12 +323,7 @@
 
       try {
         statusEl.textContent = 'Consultando…';
-
-        const r = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Accept': 'application/json' }
-        });
-
+        const r = await fetch(`/api/bobina/${encodeURIComponent(id)}`);
         const txt = await r.text();
         let data; try { data = JSON.parse(txt); } catch { data = { error:'parse_error', raw:txt }; }
 
@@ -436,35 +332,32 @@
           return;
         }
 
+        // Render ficha (aplicando formato dd/mm/yyyy a fechas posibles)
         const get = (k, alts=[]) => {
           if (data[k] != null && data[k] !== '') return data[k];
           for (const a of alts) if (data[a] != null && data[a] !== '') return data[a];
           return '';
         };
 
-        // Valores crudos (para lógica) + formateo fechas para mostrar
-        const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
+        const fechaIngresoRaw = get('FECHA_INGRESO', ['FECHA INGRESO']);
         const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
-        const estadoRaw          = get('ESTADO');
 
         const itemsStatic = [
           ['ID_FILA', get('ID_FILA') || get('ID')],
           ['CÓDIGO', get('CODIGO', ['CÓDIGO'])],
           ['DESCRIPCIÓN', get('DESCRIPCION', ['DESCRIPCIÓN'])],
           ['PROVEEDOR', get('PROVEEDOR')],
-          // ⬇️ Fechas formateadas a dd/mm/yyyy
           ['FECHA INGRESO', formatDMY(fechaIngresoRaw) || '—'],
           ['LOTE', get('LOTE')],
           ['FECHA DEVOLUCIÓN', formatDMY(fechaDevolucionRaw) || '—'],
           ['LÍNEA', get('ULTIMA_LINEA', ['LINEA'])],
           ['OBSERVACIÓN', get('OBSERVACION', ['OBSERVACIÓN'])]
         ];
-
         rowsEl.innerHTML = itemsStatic.map(([k,v]) => `<div class="row"><b>${k}:</b> ${v || ''}</div>`).join('');
 
-        // ===== Editables (Netlify endpoints) =====
+        // Editables
         const guardarCambio = async (payload, status, afterOk) => {
-          const r = await fetch('/api/update', {
+          const r = await fetch('/api/bobina/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -478,10 +371,7 @@
         };
 
         async function refetchAndPatch() {
-          const r2 = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&v=${Date.now()}`, {
-            cache: 'no-store',
-            headers: { 'Accept': 'application/json' }
-          });
+          const r2 = await fetch(`/api/bobina/${encodeURIComponent(id)}?v=${Date.now()}`, { cache: 'no-store' });
           const t2 = await r2.text();
           let d2; try { d2 = JSON.parse(t2); } catch { d2 = null; }
           if (r2.ok && d2 && !d2.error) {
@@ -489,13 +379,10 @@
             document.getElementById('val-ubicacion_almacen') && (document.getElementById('val-ubicacion_almacen').textContent =
               d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICACIÓN'] || '');
             document.getElementById('val-estado') && (document.getElementById('val-estado').textContent = d2.ESTADO ?? '');
-
-            // actualizar alerta si cambió estado/fecha
-            applyAlert(d2.FECHA_INGRESO ?? d2['FECHA INGRESO'], d2.ESTADO);
           }
         }
 
-        // CANTIDAD
+        // CANTIDAD (number)
         rowsEl.appendChild(editableRow({
           label: 'CANTIDAD',
           value: get('CANTIDAD'),
@@ -507,7 +394,7 @@
           }
         }));
 
-        // UBICACIÓN
+        // UBICACIÓN (text)
         rowsEl.appendChild(editableRow({
           label: 'UBICACIÓN',
           value: get('UBICACION_ALMACEN', ['UBICACIÓN']),
@@ -519,32 +406,44 @@
           }
         }));
 
-        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
+        // ESTADO (texto libre, sin desplegable; se muestra tal cual viene de Excel)
+        const estadoActual = get('ESTADO'); // visible tal cual
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
-          value: estadoRaw,
+          value: estadoActual,
           field: 'estado',
-          type: 'select',
-          options: ['ALMACEN', 'LINEA', 'BLOQUEADA'],
+          type: 'text',
           onSave: async (newVal, status, done) => {
-            if (!newVal) throw new Error('Seleccioná un estado');
-            await guardarCambio({ id, estado: newVal }, status, () => {
-              // actualizar alerta con el nuevo estado
-              applyAlert(fechaIngresoRaw, newVal);
-              done();
-            });
+            // permitir vacío o cualquier texto
+            await guardarCambio({ id, estado: newVal }, status, () => done());
+            // tras guardar, re-evaluamos el contorno rojo
+            applyAlert(formatDMY(fechaIngresoRaw), newVal);
           }
         }));
 
-        // Link ficha/imagen
+        // Links extra
         const url = get('URL');
         if (url) {
           extraLinks.innerHTML = fieldRow('Ficha/Imagen', `<a href="${url}" target="_blank" rel="noreferrer">Abrir</a>`);
         }
 
-        // Mostrar tarjeta, esconder status
+        // Mostrar ficha
         cardEl.style.display = 'block';
         statusEl.style.display = 'none';
+
+        // 🚨 Alerta: contorno rojo si >= 2 años o estado BLOQUE… (robusto ante typos: “bloqueda”, etc.)
+        function applyAlert(fechaIngDisplay, estadoVal){
+          const d = parseDateFlexible(fechaIngDisplay || fechaIngresoRaw);
+          let danger = false;
+          if (d) {
+            const diffYears = yearsDiff(d, new Date());
+            if (diffYears >= 2) danger = true;
+          }
+          const estN = normText(estadoVal != null ? estadoVal : estadoActual);
+          if (estN.startsWith('BLOQUE')) danger = true; // BLOQUEADA, BLOQUEDA, BLOQUEO, etc.
+          cardEl.classList.toggle('alerta-roja', danger);
+        }
+        applyAlert(formatDMY(fechaIngresoRaw), estadoActual);
 
         // Imagen
         const raw = get('IMAGEN_URL', ['IMAGEN URL']);
@@ -566,7 +465,7 @@
           imgWrap.innerHTML = '<span class="muted">Sin imagen configurada.</span>';
         }
 
-        // — Devolución (Netlify endpoint) —
+        // — Devolución —
         const dev = document.getElementById('devolucion');
         const devForm = document.getElementById('devForm');
         const devStatus = document.getElementById('devStatus');
@@ -585,7 +484,7 @@
           Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
           try {
-            const rr = await fetch('/api/devolucion', {
+            const rr = await fetch('/api/bobina/devolucion', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -603,196 +502,19 @@
           }
         });
 
-        // ⬅️ Aplicar alerta visual inicial
-        applyAlert(fechaIngresoRaw, estadoRaw);
-
       } catch (e) {
         const statusEl = document.getElementById('status');
         statusEl.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
       }
     }
-
     main();
   </script>
-<!-- === BEGIN ADD: Trigger + Modal para cambiar ID === -->
-<button id="openIdPanelBtn" class="idpanel-fab" type="button" aria-haspopup="dialog" aria-controls="idPanelModal" aria-expanded="false" title="Cambiar ID">
-  Cambiar ID
-</button>
-
-<div id="idPanelModal" class="idpanel-modal" role="dialog" aria-modal="true" aria-labelledby="idPanelTitle" style="display:none">
-  <div class="idpanel-card">
-    <div class="idpanel-head">
-      <h2 id="idPanelTitle" class="idpanel-title">Cambiar ID</h2>
-      <button id="closeIdPanelBtn" class="btn-ghost" type="button" title="Cerrar">✕</button>
-    </div>
-
-    <div class="idpanel-body">
-      <label for="idInput" class="idpanel-label">ID</label>
-      <div class="idpanel-row">
-        <input id="idInput" class="idpanel-input" name="id" placeholder="Ej: CQ1" autocomplete="off" />
-        <button id="goIdBtn" class="btn" type="button">Abrir</button>
-      </div>
-
-      <div class="idpanel-row">
-        <button id="scanIdBtn" class="btn-ghost" type="button">Escanear código (Code 128)</button>
-        <button id="copyLinkBtn" class="btn-ghost" type="button">Copiar enlace</button>
-      </div>
-
-      <div id="scannerContainer" class="scanner-viewport" style="display:none">
-        <div class="scanner-overlay"></div>
-        <div class="scanner-helpers">
-          <button id="toggleTorchBtn" class="btn-ghost" type="button">Linterna</button>
-          <button id="stopScanBtn" class="btn-ghost" type="button">Detener</button>
-        </div>
-      </div>
-
-      <p class="idpanel-help">
-        Para escanear con la cámara, abrí el sitio en <strong>HTTPS</strong> o <code>localhost</code> (requisito del navegador).
-      </p>
-    </div>
-  </div>
-</div>
-<!-- === END ADD === -->
-
-<script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.js"></script>
-<!-- === BEGIN ADD: Lógica de cambio de ID + escáner Code128 === -->
-<script>
-function getCurrentIdFromURL() {
-  const u = new URL(window.location.href);
-  return (u.searchParams.get("id") || "").trim();
-}
-function navigateToId(id) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("id", id.trim());
-  window.location.href = url.toString();
-}
-async function copyLinkWithId(id) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("id", id.trim());
-  try { await navigator.clipboard.writeText(url.toString()); alert("Enlace copiado"); }
-  catch (e) { prompt("Copiá el enlace:", url.toString()); }
-}
-
-const openBtn = document.getElementById("openIdPanelBtn");
-const modal = document.getElementById("idPanelModal");
-const closeBtn = document.getElementById("closeIdPanelBtn");
-const idInput = document.getElementById("idInput");
-const goBtn = document.getElementById("goIdBtn");
-const copyBtn = document.getElementById("copyLinkBtn");
-const scanBtn = document.getElementById("scanIdBtn");
-const scannerContainer = document.getElementById("scannerContainer");
-const toggleTorchBtn = document.getElementById("toggleTorchBtn");
-const stopScanBtn = document.getElementById("stopScanBtn");
-
-function openPanel() {
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
-  openBtn?.setAttribute("aria-expanded", "true");
-  const current = getCurrentIdFromURL();
-  if (current) idInput.value = current;
-  setTimeout(()=> idInput?.focus(), 50);
-}
-function closePanel() {
-  stopScanner();
-  modal.style.display = "none";
-  document.body.style.overflow = "";
-  openBtn?.setAttribute("aria-expanded", "false");
-}
-
-openBtn?.addEventListener("click", openPanel);
-closeBtn?.addEventListener("click", closePanel);
-modal?.addEventListener("click", (e)=>{ if (e.target === modal) closePanel(); });
-window.addEventListener("keydown", (e)=>{ if (e.key === "Escape" && modal.style.display === "flex") closePanel(); });
-
-goBtn?.addEventListener("click", ()=>{
-  const v = idInput?.value?.trim();
-  if (!v) return;
-  navigateToId(v);
-});
-copyBtn?.addEventListener("click", ()=>{
-  const v = idInput?.value?.trim() || getCurrentIdFromURL();
-  if (!v) return alert("No hay ID para copiar.");
-  copyLinkWithId(v);
-});
-idInput?.addEventListener("keydown", (e)=>{
-  if (e.key === "Enter") goBtn?.click();
-});
-
-// === Escáner Code 128 (Quagga2) ===
-let torchOn = false;
-let currentTrack = null;
-let onDetectedHandler = null;
-
-function startScanner() {
-  scannerContainer.style.display = "block";
-
-  Quagga.init({
-    inputStream: {
-      name: "Live",
-      type: "LiveStream",
-      target: scannerContainer,
-      constraints: { facingMode: "environment", aspectRatio: { ideal: 16/9 } }
-    },
-    locator: { patchSize: "medium", halfSample: true },
-    numOfWorkers: (navigator.hardwareConcurrency || 4),
-    frequency: 10,
-    decoder: { readers: ["code_128_reader"] }
-  }, function(err) {
-    if (err) {
-      console.error(err);
-      alert("No se pudo iniciar la cámara: " + err.message);
-      stopScanner();
-      return;
-    }
-    Quagga.start();
-
-    const stream = Quagga.cameraAccess.getActiveStream();
-    if (stream) currentTrack = stream.getVideoTracks()[0] || null;
-
-    onDetectedHandler = function(result) {
-      const code = (result && result.codeResult && result.codeResult.code || "").trim();
-      if (!code || code.length < 2) return;
-      handleDetected(code);
-    };
-    Quagga.onDetected(onDetectedHandler);
-  });
-}
-
-function stopTorch() {
-  if (!currentTrack) return;
-  try { currentTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch (e) {}
-}
-
-function stopScanner() {
-  try { if (onDetectedHandler) Quagga.offDetected(onDetectedHandler); } catch (e) {}
-  try { Quagga.stop(); } catch (e) {}
-  stopTorch();
-  currentTrack = null;
-  scannerContainer.style.display = "none";
-}
-
-function toggleTorch() {
-  torchOn = !torchOn;
-  if (currentTrack && currentTrack.applyConstraints) {
-    currentTrack.applyConstraints({ advanced: [{ torch: torchOn }] }).catch(()=>{});
-  }
-  toggleTorchBtn.textContent = torchOn ? "Linterna: ON" : "Linterna";
-}
-
-function handleDetected(code) {
-  const id = code.replace(/\s+/g, "");
-  idInput.value = id;
-  stopScanner();
-  navigateToId(id);
-}
-
-scanBtn?.addEventListener("click", startScanner);
-toggleTorchBtn?.addEventListener("click", toggleTorch);
-stopScanBtn?.addEventListener("click", stopScanner);
-</script>
-<!-- === END ADD === -->
 </body>
 </html>
+
+
+
+
 
 
 
