@@ -655,7 +655,7 @@
 <!-- === END ADD === -->
 
 <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.js"></script>
-<!-- === BEGIN ADD: Lógica de cambio de ID + escáner Code128 (robusta) === -->
+<!-- === BEGIN ADD: Lógica de cambio de ID + escáner Code128 === -->
 <script>
 function getCurrentIdFromURL() {
   const u = new URL(window.location.href);
@@ -685,17 +685,15 @@ const toggleTorchBtn = document.getElementById("toggleTorchBtn");
 const stopScanBtn = document.getElementById("stopScanBtn");
 
 function openPanel() {
-  if (!modal) return;
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
   openBtn?.setAttribute("aria-expanded", "true");
   const current = getCurrentIdFromURL();
-  if (current && idInput) idInput.value = current;
+  if (current) idInput.value = current;
   setTimeout(()=> idInput?.focus(), 50);
 }
 function closePanel() {
   stopScanner();
-  if (!modal) return;
   modal.style.display = "none";
   document.body.style.overflow = "";
   openBtn?.setAttribute("aria-expanded", "false");
@@ -704,7 +702,7 @@ function closePanel() {
 openBtn?.addEventListener("click", openPanel);
 closeBtn?.addEventListener("click", closePanel);
 modal?.addEventListener("click", (e)=>{ if (e.target === modal) closePanel(); });
-window.addEventListener("keydown", (e)=>{ if (e.key === "Escape" && modal?.style.display === "flex") closePanel(); });
+window.addEventListener("keydown", (e)=>{ if (e.key === "Escape" && modal.style.display === "flex") closePanel(); });
 
 goBtn?.addEventListener("click", ()=>{
   const v = idInput?.value?.trim();
@@ -720,36 +718,13 @@ idInput?.addEventListener("keydown", (e)=>{
   if (e.key === "Enter") goBtn?.click();
 });
 
-// ====== Escáner Code 128 (Quagga2) robusto ======
+// === Escáner Code 128 (Quagga2) ===
 let torchOn = false;
 let currentTrack = null;
 let onDetectedHandler = null;
 
-// Helpers seguros (no dependen de que CameraAccess exista en todas las builds)
-function getActiveStreamSafe() {
-  try {
-    return (window.Quagga &&
-            Quagga.CameraAccess &&
-            typeof Quagga.CameraAccess.getActiveStream === "function" &&
-            Quagga.CameraAccess.getActiveStream()) || null;
-  } catch (e) {
-    return null;
-  }
-}
-function getActiveTrackSafe() {
-  const s = getActiveStreamSafe();
-  try { return s ? (s.getVideoTracks && s.getVideoTracks()[0]) : null; } catch (e) { return null; }
-}
-
 function startScanner() {
-  if (!scannerContainer) return;
   scannerContainer.style.display = "block";
-
-  if (!(window.Quagga && Quagga.init)) {
-    alert("No se pudo cargar el lector (Quagga2). Verificá conexión e incluye el script de Quagga2.");
-    stopScanner();
-    return;
-  }
 
   Quagga.init({
     inputStream: {
@@ -765,14 +740,14 @@ function startScanner() {
   }, function(err) {
     if (err) {
       console.error(err);
-      alert("No se pudo iniciar la cámara: " + (err && err.message ? err.message : err));
+      alert("No se pudo iniciar la cámara: " + err.message);
       stopScanner();
       return;
     }
     Quagga.start();
 
-    // Obtener el track si está disponible (puede ser null y está bien)
-    currentTrack = getActiveTrackSafe();
+    const stream = Quagga.cameraAccess.getActiveStream();
+    if (stream) currentTrack = stream.getVideoTracks()[0] || null;
 
     onDetectedHandler = function(result) {
       const code = (result && result.codeResult && result.codeResult.code || "").trim();
@@ -785,36 +760,28 @@ function startScanner() {
 
 function stopTorch() {
   if (!currentTrack) return;
-  try { currentTrack.applyConstraints && currentTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch (e) {}
+  try { currentTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch (e) {}
 }
 
 function stopScanner() {
-  try { onDetectedHandler && Quagga && Quagga.offDetected && Quagga.offDetected(onDetectedHandler); } catch (e) {}
-  try { Quagga && Quagga.stop && Quagga.stop(); } catch (e) {}
+  try { if (onDetectedHandler) Quagga.offDetected(onDetectedHandler); } catch (e) {}
+  try { Quagga.stop(); } catch (e) {}
   stopTorch();
   currentTrack = null;
-  if (scannerContainer) scannerContainer.style.display = "none";
+  scannerContainer.style.display = "none";
 }
 
 function toggleTorch() {
   torchOn = !torchOn;
-  if (currentTrack && currentTrack.getCapabilities && currentTrack.applyConstraints) {
-    const caps = currentTrack.getCapabilities();
-    if (caps && 'torch' in caps) {
-      currentTrack.applyConstraints({ advanced: [{ torch: torchOn }] }).catch(()=>{});
-    } else {
-      alert("Este dispositivo/navegador no soporta linterna.");
-      torchOn = false;
-    }
+  if (currentTrack && currentTrack.applyConstraints) {
+    currentTrack.applyConstraints({ advanced: [{ torch: torchOn }] }).catch(()=>{});
   }
-  if (typeof toggleTorchBtn !== 'undefined' && toggleTorchBtn) {
-    toggleTorchBtn.textContent = torchOn ? "Linterna: ON" : "Linterna";
-  }
+  toggleTorchBtn.textContent = torchOn ? "Linterna: ON" : "Linterna";
 }
 
 function handleDetected(code) {
   const id = code.replace(/\s+/g, "");
-  if (idInput) idInput.value = id;
+  idInput.value = id;
   stopScanner();
   navigateToId(id);
 }
@@ -826,6 +793,13 @@ stopScanBtn?.addEventListener("click", stopScanner);
 <!-- === END ADD === -->
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 
