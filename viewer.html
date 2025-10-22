@@ -57,7 +57,7 @@
     }
     .brand .dot{ width:10px; height:10px; border-radius:999px; background:var(--accent) }
 
-    /* NUEVO: buscador ID en header */
+    /* buscador ID en header */
     .id-tools{
       display:flex; gap:8px; align-items:center;
       flex-wrap: wrap;
@@ -143,7 +143,7 @@
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
 
-    /* Contorno rojo cuando aplica la alerta */
+    /* Contorno rojo alerta */
     .alerta-roja{
       outline: 3px solid var(--danger);
       box-shadow: 0 0 0 8px rgba(239,68,68,.24);
@@ -173,6 +173,8 @@
     .scan-hint{ margin-top:8px; font-size:14px; color:var(--muted) }
     .modal footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
   </style>
+  <!-- Fallback QR decoder (client-side) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
 </head>
 <body>
   <div class="wrap">
@@ -182,7 +184,7 @@
         <div>Bobinas • Viewer</div>
       </div>
 
-      <!-- NUEVO: buscador / pegar / escanear -->
+      <!-- buscador / pegar / escanear -->
       <div class="id-tools">
         <div class="row">
           <span id="badge" class="id-badge">ID: —</span>
@@ -252,6 +254,8 @@
       </header>
       <div class="video-wrap">
         <video id="scanVideo" autoplay playsinline></video>
+        <!-- canvas oculto para fallback jsQR -->
+        <canvas id="scanCanvas" style="display:none"></canvas>
       </div>
       <div id="scanHint" class="scan-hint">Apuntá a un QR (URL) o a un Code128 (ID). Se detecta automáticamente.</div>
       <footer>
@@ -278,26 +282,18 @@
       const path = base.includes('.html') ? base : 'viewer.html';
       location.href = `${path}?id=${encodeURIComponent(id)}`;
     }
-
-    // extrae ID desde texto/URL (ej: "...viewer.html?id=CQ1", "CQ1", "...id=CQ-55", "algo CQ9")
+    // extrae ID desde texto/URL
     function extractIdFromAny(str){
       if(!str) return '';
       const s = String(str).trim();
-
-      // Primero, si parece URL, intento con query param "id"
       try{
         const u = new URL(s);
         const q = u.searchParams.get('id');
         if(q) return q.trim();
-      }catch{ /* no es URL completa */ }
-
-      // Si no, busco un token tipo CQ + alfanumérico (flexible, mayús/minús)
+      }catch{}
       const m = s.toUpperCase().match(/\bCQ[0-9A-Z\-_.]+\b/);
       if(m && m[0]) return m[0];
-
-      // Si todo falla y es una palabra corta, me la juego
       if (/^[0-9A-Za-z\-_]+$/.test(s)) return s;
-
       return '';
     }
 
@@ -384,7 +380,6 @@
         input = document.createElement('select'); input.className = 'input';
         const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '(seleccionar)'; input.appendChild(optEmpty);
         (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
-
         const current = (value ?? '').toString().trim();
         const has = Array.from(input.options).some(o => o.value === current);
         if (current && !has) input.add(new Option(current, current));
@@ -484,7 +479,7 @@
           return '';
         };
 
-        // Valores crudos (para lógica) + formateo fechas para mostrar
+        // Valores crudos (para lógica) + fechas formateadas
         const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
         const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
         const estadoRaw          = get('ESTADO');
@@ -503,7 +498,7 @@
 
         rowsEl.innerHTML = itemsStatic.map(([k,v]) => `<div class="row"><b>${k}:</b> ${v || ''}</div>`).join('');
 
-        // ===== Editables (Netlify endpoints) =====
+        // ===== Editables =====
         const guardarCambio = async (payload, status, afterOk) => {
           const r = await fetch('/api/update', {
             method: 'POST',
@@ -534,7 +529,6 @@
           }
         }
 
-        // CANTIDAD
         rowsEl.appendChild(editableRow({
           label: 'CANTIDAD',
           value: get('CANTIDAD'),
@@ -546,7 +540,6 @@
           }
         }));
 
-        // UBICACIÓN
         rowsEl.appendChild(editableRow({
           label: 'UBICACIÓN',
           value: get('UBICACION_ALMACEN', ['UBICACIÓN']),
@@ -558,7 +551,6 @@
           }
         }));
 
-        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
           value: estadoRaw,
@@ -589,16 +581,8 @@
         if (raw) {
           const imgUrl = normalizeSharePointImageUrl(raw);
           imgWrap.innerHTML = `
-            <img
-              src="${imgUrl}"
-              alt="Etiqueta"
-              class="hero-img"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            />
-            <div style="margin-top:6px">
-              <a href="${imgUrl}" target="_blank" rel="noreferrer">Abrir en pestaña nueva</a>
-            </div>
+            <img src="${imgUrl}" alt="Etiqueta" class="hero-img" loading="lazy" referrerpolicy="no-referrer"/>
+            <div style="margin-top:6px"><a href="${imgUrl}" target="_blank" rel="noreferrer">Abrir en pestaña nueva</a></div>
           `;
         } else {
           imgWrap.innerHTML = '<span class="muted">Sin imagen configurada.</span>';
@@ -680,11 +664,10 @@
         }
       });
 
-      // Scanner
       scanBtn.addEventListener('click', openScanModal);
     })();
 
-    // ====== Escáner (QR + Code128) ======
+    // ====== Escáner (BarcodeDetector + fallback jsQR) ======
     let scanStream = null;
     let scanRaf = 0;
     let barcodeDetector = null;
@@ -693,47 +676,63 @@
       const modal = document.getElementById('scanModal');
       const video = document.getElementById('scanVideo');
       const hint  = document.getElementById('scanHint');
+      const canvas= document.getElementById('scanCanvas');
+      const ctx   = canvas.getContext('2d', { willReadFrequently:true });
+
       modal.style.display = 'flex';
       modal.setAttribute('aria-hidden','false');
 
       try{
-        // Soporte BarcodeDetector
+        // BarcodeDetector si está disponible (primero intenta QR+Code128, si falla usa QR solo)
         if('BarcodeDetector' in window){
-          const formats = ['qr_code','code_128'];
-          barcodeDetector = new BarcodeDetector({ formats });
+          try{
+            barcodeDetector = new BarcodeDetector({ formats: ['qr_code','code_128'] });
+          }catch{
+            try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }catch{ barcodeDetector = null; }
+          }
         }else{
           barcodeDetector = null;
-          hint.innerHTML = 'Tu navegador no soporta detección de códigos. Usá "Pegar" o escribí el ID.';
         }
 
         // Cámara
-        scanStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-          audio: false
-        });
+        scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
-        if(barcodeDetector){
-          const loop = async () => {
-            try{
+        // Bucle de lectura
+        const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
+        if(!barcodeDetector && !useJsQR){
+          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
+        }
+
+        const loop = async () => {
+          try{
+            if(barcodeDetector){
               const codes = await barcodeDetector.detect(video);
               if(codes && codes.length){
                 const raw = (codes[0].rawValue||'').trim();
                 const id = extractIdFromAny(raw);
-                if(id){
-                  await closeScanModal();
-                  gotoId(id);
-                  return;
-                }else{
-                  // Si es QR con URL sin id explícito, no navegamos
-                  hint.textContent = 'Código leído, pero no se encontró un ID. Probá de nuevo o usá "Pegar".';
+                if(id){ await closeScanModal(); gotoId(id); return; }
+              }
+            }else if(useJsQR){
+              const vw = video.videoWidth, vh = video.videoHeight;
+              if(vw && vh){
+                canvas.width = vw; canvas.height = vh;
+                ctx.drawImage(video, 0, 0, vw, vh);
+                const img = ctx.getImageData(0,0,vw,vh);
+                const qr = window.jsQR && window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
+                if(qr && qr.data){
+                  const id = extractIdFromAny(qr.data);
+                  if(id){ await closeScanModal(); gotoId(id); return; }
                 }
               }
-            }catch(e){ /* ignoramos errores de frame */ }
-            scanRaf = requestAnimationFrame(loop);
-          };
+            }
+          }catch(e){
+            // ignoramos, seguimos intentando
+          }
           scanRaf = requestAnimationFrame(loop);
-        }
+        };
+        scanRaf = requestAnimationFrame(loop);
+
       }catch(err){
         hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
       }
@@ -758,178 +757,12 @@
       }
     }
 
-
     // Go
     main();
   </script>
-   <!-- ZXing: lector universal de códigos (QR, Code-128, etc.) -->
-<script type="module">
-  import {
-    BrowserMultiFormatReader,
-    NotFoundException,
-    ChecksumException,
-    FormatException,
-    BarcodeFormat,
-    DecodeHintType
-  } from "https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/+esm";
-
-  // Elementos del modal (ajusta ids si tus nombres difieren)
-  const dlg   = document.getElementById('scanDialog');
-  const video = document.getElementById('scanVideo');
-  const msgEl = document.getElementById('scanMsg');
-  const stopB = document.getElementById('scanStopBtn');
-  const openB = document.getElementById('openScanBtn');
-  const idInp = document.getElementById('badgeInput');  // input de ID en la cabecera
-
-  let zxing = null;
-  let currentDeviceId = null;
-
-  // Hints: limitamos a QR + Code-128 (puedes agregar más si querés)
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE, BarcodeFormat.CODE_128]);
-
-  function setMsg(t){ if (msgEl) msgEl.textContent = t || ''; }
-
-  function extractIdFromText(txt){
-    if (!txt) return '';
-    // 1) Si es URL con ?id=...
-    try {
-      const u = new URL(txt);
-      const qp = u.searchParams.get('id');
-      if (qp) return qp.trim();
-      // 2) Si la ruta es .../viewer.html?id=CQ1 o .../CQ1
-      const pathLast = u.pathname.split('/').filter(Boolean).pop() || '';
-      if (/^CQ\d+/i.test(pathLast)) return pathLast;
-    } catch { /* no es URL */ }
-    // 3) Si es texto tipo CQ1 o similar
-    const m = String(txt).match(/[A-Za-z]{1,4}\d{1,6}/);
-    return (m ? m[0] : String(txt)).trim();
-  }
-
-  async function listCameras(){
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices.filter(d => d.kind === 'videoinput');
-  }
-
-  async function startZXing(){
-    if (!zxing) zxing = new BrowserMultiFormatReader(hints);
-
-    // Elegimos cámara trasera si existe
-    const cams = await listCameras();
-    const back = cams.find(c => /back|rear|environment/i.test(c.label));
-    currentDeviceId = (back || cams[0])?.deviceId || null;
-
-    if (!currentDeviceId){
-      // Fallback a facingMode si no hay deviceId
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
-      video.srcObject = stream;
-      await video.play();
-      decodeLoop(); // decodificación por frames (fallback)
-      return;
-    }
-
-    // Modo directo de ZXing con deviceId
-    await zxing.decodeFromVideoDevice(currentDeviceId, video, (result, err) => {
-      if (result && result.getText) {
-        const raw = result.getText();
-        const id = extractIdFromText(raw);
-        setMsg(`Detectado: ${raw}`);
-        onScanFound(id);
-      } else if (err) {
-        // Errores normales del ciclo (no encontrado / checksum / formato)
-        if (err instanceof NotFoundException || err instanceof ChecksumException || err instanceof FormatException) {
-          // silencio: significa "no hay código en este frame"
-        } else {
-          setMsg('Error de lectura: ' + (err.message || err));
-        }
-      }
-    });
-  }
-
-  // Fallback cuando no tenemos deviceId: leemos por frames del <video>
-  async function decodeLoop(){
-    if (!zxing) zxing = new BrowserMultiFormatReader(hints);
-    let keep = true;
-    const tick = async () => {
-      if (!keep) return;
-      try {
-        const result = await zxing.decodeFromVideoElement(video);
-        if (result && result.getText) {
-          const raw = result.getText();
-          const id = extractIdFromText(raw);
-          setMsg(`Detectado: ${raw}`);
-          onScanFound(id);
-          return;
-        }
-      } catch(e) {
-        // NotFound/Checksum/Format -> continuar
-      }
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    // guardamos el stopper
-    decodeLoop.stop = () => { keep = false; };
-  }
-
-  function stopZXing(){
-    try { zxing?.reset(); } catch {}
-    // Cortar media stream
-    const s = video.srcObject;
-    if (s && typeof s.getTracks === 'function') {
-      s.getTracks().forEach(t => t.stop());
-    }
-    video.srcObject = null;
-    decodeLoop?.stop?.();
-  }
-
-  function onScanFound(id){
-    if (!id) return;
-    // volcamos al input y navegamos
-    if (idInp) idInp.value = id;
-    stopZXing();
-    if (dlg) dlg.open = false;
-    // Navegar a la misma página con el nuevo id
-    const url = new URL(window.location.href);
-    url.searchParams.set('id', id);
-    window.location.assign(url.toString());
-  }
-
-  // ——— Wiring UI ———
-  if (openB) {
-    openB.addEventListener('click', async () => {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setMsg('Tu navegador no permite acceder a la cámara.');
-        if (dlg) dlg.open = true;
-        return;
-      }
-      setMsg('Iniciando cámara…');
-      if (dlg) dlg.open = true;
-      try {
-        await startZXing();
-        setMsg('Apuntá al QR o Code-128…');
-      } catch (e) {
-        setMsg('No se pudo iniciar la cámara: ' + (e.message || e));
-      }
-    });
-  }
-
-  if (stopB) {
-    stopB.addEventListener('click', () => {
-      stopZXing();
-      setMsg('');
-    });
-  }
-
-  // Si se cierra el <dialog>, detenemos la cámara
-  if (dlg) {
-    dlg.addEventListener('close', () => {
-      stopZXing();
-      setMsg('');
-    });
-  }
-</script>
 </body>
 </html>
+
 
 
 
