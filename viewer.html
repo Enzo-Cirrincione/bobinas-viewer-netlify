@@ -6,7 +6,6 @@
   <title>Bobinas • Viewer</title>
   <meta name="color-scheme" content="light dark" />
   <style>
-    /* ===== Design tokens + tipografías/espacios fluidos ===== */
     :root{
       --bg: #0b0e14;
       --card: #111520;
@@ -18,17 +17,6 @@
       --danger: #ef4444;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 16px;
-
-      /* tipografía fluida */
-      --fs-0: clamp(14px, 1.2vw, 16px);
-      --fs-1: clamp(18px, 1.8vw, 22px);
-      --fs-2: clamp(22px, 2.4vw, 28px);
-
-      /* espaciado fluido */
-      --sp-1: clamp(8px, 1.2vw, 12px);
-      --sp-2: clamp(12px, 1.6vw, 16px);
-      --sp-3: clamp(16px, 2.2vw, 22px);
-      --sp-4: clamp(20px, 3vw, 28px);
     }
     @media (prefers-color-scheme: light){
       :root{
@@ -43,104 +31,67 @@
         --shadow: 0 10px 30px rgba(2,6,23,.08);
       }
     }
-
     *{ box-sizing:border-box }
     html,body{ height:100% }
     body{
-      margin:0; padding: var(--sp-3);
+      margin:0; padding:24px;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      font-size: var(--fs-0);
       background:
         radial-gradient(1200px 800px at 10% -10%, rgba(79,70,229,.20), transparent 40%),
         radial-gradient(1000px 700px at 110% 10%, rgba(34,197,94,.12), transparent 45%),
         var(--bg);
       color:var(--text);
     }
-
-    .wrap{
-      width:min(1100px, 100%);
-      margin:0 auto;
-      display:grid; gap: var(--sp-3);
-    }
-
+    .wrap{ max-width: 960px; margin:0 auto; display:grid; gap:16px }
     header{
-      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
-      gap: var(--sp-2);
-      padding: var(--sp-2) var(--sp-3);
-      border:1px solid var(--border); border-radius:var(--radius);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:16px; padding:16px 20px; border:1px solid var(--border); border-radius:var(--radius);
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)) , var(--card);
       box-shadow: var(--shadow);
+      flex-wrap: wrap;
     }
     .brand{
       display:flex; align-items:center; gap:12px;
       font-weight:700; letter-spacing:.2px;
-      font-size: var(--fs-1);
+      min-width: 220px;
     }
     .brand .dot{ width:10px; height:10px; border-radius:999px; background:var(--accent) }
 
-    /* === Badge editable (responsive) === */
+    /* NUEVO: buscador ID en header */
+    .id-tools{
+      display:flex; gap:8px; align-items:center;
+      flex-wrap: wrap;
+      min-width: 280px;
+      flex: 1 1 420px;
+      justify-content: flex-end;
+    }
+    .id-tools .row{
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+      width: 100%;
+    }
+    .id-input{
+      flex: 1 1 220px;
+      min-width: 180px;
+      max-width: 360px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:transparent;
+      color:var(--text);
+      outline:none;
+    }
     .id-badge{
-      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      display:inline-flex; align-items:center; gap:8px;
       padding:6px 10px; border-radius:999px; background: rgba(79,70,229,.15); color: var(--text);
       border:1px solid rgba(79,70,229,.35); font-weight:600; font-size:13px;
+      white-space: nowrap;
     }
-    .id-badge .input-inline{
-      width: clamp(200px, 35vw, 360px);
-      padding:6px 10px; border-radius:10px;
-      border:1px solid var(--border); background:transparent; color:var(--text);
-      outline:none; font-weight:600;
-    }
-    @media (max-width: 540px){
-      .id-badge{ width:100%; justify-content:flex-start; }
-      .id-badge .input-inline,
-      .id-badge .btn{ width:100%; }
-    }
-
-    /* Layout cartas adaptable */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: var(--sp-3);
-    }
-
-    .card{
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card);
-      padding: var(--sp-3);
-      box-shadow: var(--shadow);
-    }
-    .title{
-      margin:0 0 var(--sp-2); font-size: var(--fs-2); font-weight:800; letter-spacing:.2px;
-    }
-
-    .rows{ display:grid; gap:10px }
-    .row{ display:flex; align-items:baseline; gap:10px; line-height:1.35; flex-wrap:wrap }
-    .row b{
-      min-width: 180px; font-weight:700; color: var(--muted);
-    }
-    @container (min-width: 520px){
-      .row { flex-wrap:nowrap; }
-    }
-
-    .muted{ color: var(--muted) }
-    .error{ color: var(--danger) }
-    a{ color:var(--accent); text-decoration: none }
-    a:hover{ text-decoration: underline }
-
-    .hero-img{
-      width:100%;
-      max-height: clamp(220px, 42vh, 420px);
-      object-fit:contain;
-      border-radius:12px; border:1px solid var(--border); background: #0b0f19;
-    }
-
     .btn{
       appearance:none; border:1px solid transparent; border-radius:10px;
-      padding:10px 14px; font-weight:700; cursor:pointer; line-height:1;
+      padding:10px 14px; font-weight:700; cursor:pointer;
       background:var(--accent); color:white; box-shadow: 0 6px 20px rgba(79,70,229,.35);
       transition: transform .04s ease, filter .15s ease, box-shadow .15s ease;
-      min-height: 40px;
+      white-space: nowrap;
     }
     .btn:hover{ filter:brightness(1.05); box-shadow:0 10px 26px rgba(79,70,229,.45) }
     .btn:active{ transform: translateY(1px) }
@@ -149,12 +100,41 @@
       box-shadow:none;
     }
 
+    .grid{
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:16px;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr }
+    }
+    .card{
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+    .title{
+      margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:.2px;
+    }
+    .rows{ display:grid; gap:10px }
+    .row{ display:flex; align-items:baseline; gap:10px; line-height:1.35; flex-wrap:wrap }
+    .row b{
+      min-width: 190px; font-weight:700; color: var(--muted);
+    }
+    .muted{ color: var(--muted) }
+    .error{ color: var(--danger) }
+    a{ color:var(--accent); text-decoration: none }
+    a:hover{ text-decoration: underline }
+    .hero-img{
+      width:100%; max-height:360px; object-fit:contain;
+      border-radius:12px; border:1px solid var(--border); background: #0b0f19;
+    }
+
     .form-grid{ display:grid; gap:12px }
     .input{
       width:100%; padding:10px 12px; border-radius:10px;
       border:1px solid var(--border); background:transparent; color:var(--text);
       outline:none;
-      min-height: 40px;
     }
     .input::placeholder{ color: color-mix(in oklab, var(--muted) 80%, transparent) }
     .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end }
@@ -163,28 +143,35 @@
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
 
-    /* Contorno rojo alerta */
+    /* Contorno rojo cuando aplica la alerta */
     .alerta-roja{
       outline: 3px solid var(--danger);
       box-shadow: 0 0 0 8px rgba(239,68,68,.24);
     }
 
-    /* Overlay Escaneo (responsive) */
-    .scan-overlay{
-      position: fixed; inset: 0; z-index: 50;
-      background: rgba(0,0,0,.6);
-      display: none; align-items: center; justify-content: center; padding: var(--sp-3);
+    /* Modal escáner */
+    .modal-backdrop{
+      position: fixed; inset:0; background: rgba(0,0,0,.6);
+      display:none; align-items:center; justify-content:center; z-index: 50;
     }
-    .scan-card{
-      background: var(--card); color: var(--text);
-      border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
-      width: min(720px, 100%); padding: var(--sp-2);
+    .modal{
+      width:min(680px, 94vw);
+      border-radius:16px; border:1px solid var(--border);
+      background: var(--card); padding:16px;
+      box-shadow: var(--shadow);
     }
-    .scan-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
-    .scan-video{
-      width:100%; aspect-ratio: 16 / 9; border-radius:12px; border:1px solid var(--border); background:#000;
-      max-height: 70vh; object-fit:cover;
+    .modal header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; border:none; border-radius:0; background:transparent; box-shadow:none; padding: 0 0 10px;
     }
+    .video-wrap{
+      position: relative; border:1px solid var(--border); border-radius:12px; overflow:hidden;
+      background:#000;
+      aspect-ratio: 4 / 3;
+    }
+    video{ width:100%; height:auto; display:block; }
+    .scan-hint{ margin-top:8px; font-size:14px; color:var(--muted) }
+    .modal footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
   </style>
 </head>
 <body>
@@ -195,16 +182,15 @@
         <div>Bobinas • Viewer</div>
       </div>
 
-      <!-- Badge editable -->
-      <div id="badge" class="id-badge">
-        <span>ID:</span>
-        <span id="badgeValue" title="Click para editar" style="cursor:text;">—</span>
-
-        <input id="idInput" class="input-inline" type="text" inputmode="text"
-               placeholder="Ingresá ID o pegá URL" style="display:none;" />
-        <button id="openBtn"  class="btn"           style="display:none;">Abrir</button>
-        <button id="clearBtn" class="btn btn-ghost" style="display:none;">Limpiar</button>
-        <button id="scanBtn"  class="btn btn-ghost">Escanear</button>
+      <!-- NUEVO: buscador / pegar / escanear -->
+      <div class="id-tools">
+        <div class="row">
+          <span id="badge" class="id-badge">ID: —</span>
+          <input id="idInput" class="id-input" placeholder="Escribí o pegá un ID o URL…" inputmode="text" />
+          <button id="goBtn" class="btn">Buscar</button>
+          <button id="pasteBtn" class="btn btn-ghost" title="Pegar desde portapapeles">Pegar</button>
+          <button id="scanBtn" class="btn btn-ghost" title="Escanear código">Escanear</button>
+        </div>
       </div>
     </header>
 
@@ -257,23 +243,28 @@
     <div id="status" class="muted">Cargando…</div>
   </div>
 
-  <!-- Overlay escaneo -->
-  <div id="scanOverlay" class="scan-overlay" aria-hidden="true">
-    <div class="scan-card">
-      <div class="scan-toolbar">
-        <strong>Escanear código (QR / Code128)</strong>
-        <button id="closeScanBtn" class="btn btn-ghost">Cancelar</button>
+  <!-- Modal escáner -->
+  <div id="scanModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scanTitle">
+      <header>
+        <h3 id="scanTitle" class="title" style="margin:0">Escanear código</h3>
+        <button id="closeScanBtn" class="btn btn-ghost">Cerrar</button>
+      </header>
+      <div class="video-wrap">
+        <video id="scanVideo" autoplay playsinline></video>
       </div>
-      <video id="scanVideo" class="scan-video" autoplay playsinline></video>
-      <div id="scanStatus" class="muted" style="margin-top:8px">Buscando…</div>
+      <div id="scanHint" class="scan-hint">Apuntá a un QR (URL) o a un Code128 (ID). Se detecta automáticamente.</div>
+      <footer>
+        <button id="scanStopBtn" class="btn btn-ghost">Detener</button>
+      </footer>
     </div>
   </div>
 
   <script>
-    /* ===== Endpoints ===== */
+    // ===== Endpoints Netlify =====
     const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
 
-    /* ===== Helpers ===== */
+    // ——— Helpers ———
     function getId() {
       const params = new URLSearchParams(window.location.search);
       const q = params.get('id');
@@ -281,6 +272,35 @@
       const parts = window.location.pathname.split('/').filter(Boolean);
       return parts[parts.length - 1] || null;
     }
+    function gotoId(id){
+      if(!id){ toast('Ingresá un ID válido', true); return; }
+      const base = location.pathname.split('/').pop() || 'viewer.html';
+      const path = base.includes('.html') ? base : 'viewer.html';
+      location.href = `${path}?id=${encodeURIComponent(id)}`;
+    }
+
+    // extrae ID desde texto/URL (ej: "...viewer.html?id=CQ1", "CQ1", "...id=CQ-55", "algo CQ9")
+    function extractIdFromAny(str){
+      if(!str) return '';
+      const s = String(str).trim();
+
+      // Primero, si parece URL, intento con query param "id"
+      try{
+        const u = new URL(s);
+        const q = u.searchParams.get('id');
+        if(q) return q.trim();
+      }catch{ /* no es URL completa */ }
+
+      // Si no, busco un token tipo CQ + alfanumérico (flexible, mayús/minús)
+      const m = s.toUpperCase().match(/\bCQ[0-9A-Z\-_.]+\b/);
+      if(m && m[0]) return m[0];
+
+      // Si todo falla y es una palabra corta, me la juego
+      if (/^[0-9A-Za-z\-_]+$/.test(s)) return s;
+
+      return '';
+    }
+
     function normalizeSharePointImageUrl(u) {
       if (!u) return u;
       u = u.replace(/%2520/g, '%20');
@@ -301,18 +321,19 @@
         return u;
       } catch { return u; }
     }
+
     function fieldRow(label, value) {
       return `<div class="row"><b>${label}:</b> ${value ?? ''}</div>`;
     }
 
-    // Fechas/alerta
+    // ===== Fechas/alerta =====
     const stripDiacritics = (s)=> (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const normText = (s)=> stripDiacritics(String(s||'')).replace(/\s+/g,' ').trim().toUpperCase();
 
     function parseDateFlexible(v){
       if (v == null || v === '') return null;
       const s = String(v).trim();
-      if (/^\d+(\.\d+)?$/.test(s)) {
+      if (/^\d+(\.\d+)?$/.test(s)) { // Excel serial
         const t = Math.round((Number(s) - 25569) * 86400 * 1000);
         const d = new Date(t);
         return isNaN(d) ? null : d;
@@ -340,17 +361,13 @@
       cardEl.classList.toggle('alerta-roja', danger);
     }
 
-    // Normaliza ESTADO para select
-    function normalizeEstado(s){
-      if (s == null) return '';
-      const t = String(s).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      if (['ALMACEN','ALMACEN ','DEPÓSITO','DEPOSITO','DEPOSITO '].includes(t)) return 'ALMACEN';
-      if (['LINEA','EN LINEA','EN  LINEA','LÍNEA'].includes(t)) return 'LINEA';
-      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA';
-      return String(s).trim();
+    // ===== UI helpers =====
+    function toast(msg, isErr=false){
+      const el = document.getElementById('status');
+      el.innerHTML = isErr ? `<span class="error">${msg}</span>` : msg;
     }
 
-    /* ===== Editable rows ===== */
+    // ——— Editable rows ———
     function editableRow({ label, value, field, type = 'text', options = [], onSave }) {
       const row = document.createElement('div');
       row.className = 'row';
@@ -369,19 +386,9 @@
         (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
 
         const current = (value ?? '').toString().trim();
-        const norm = normalizeEstado(current);
-        const has = Array.from(input.options).some(o => o.value === norm || o.value === current);
-        if (current) {
-          if (!has) {
-            const opt = new Option(current, current);
-            input.add(opt);
-            input.value = current;
-          } else {
-            input.value = (Array.from(input.options).some(o=>o.value===norm) ? norm : current);
-          }
-        } else {
-          input.value = '';
-        }
+        const has = Array.from(input.options).some(o => o.value === current);
+        if (current && !has) input.add(new Option(current, current));
+        input.value = current || '';
       } else {
         input = document.createElement('input'); input.className = 'input'; input.type = (type === 'number') ? 'number' : 'text';
         if (type === 'number') { input.min = '0'; input.step = '1'; }
@@ -435,117 +442,23 @@
       return row;
     }
 
-    /* ===== Badge editable + navegación por ID/URL ===== */
-    function extractId(raw){
-      if(!raw) return '';
-      const s = String(raw).trim();
-      try{
-        const u = new URL(s);
-        const qid = u.searchParams.get('id');
-        if(qid) return qid.trim();
-        const segs = u.pathname.split('/').filter(Boolean);
-        if(segs.length) return segs[segs.length-1];
-      }catch{ /* no es URL */ }
-      return s;
-    }
-    function gotoId(id){
-      const clean = extractId(id);
-      if(!clean) return;
-      const url = new URL(location.href);
-      url.searchParams.set('id', clean);
-      location.href = url.toString();
-    }
-    (function setupEditableBadge(){
-      const spanVal = document.getElementById('badgeValue');
-      const input   = document.getElementById('idInput');
-      const openBtn = document.getElementById('openBtn');
-      const clearBtn= document.getElementById('clearBtn');
-      const scanBtn = document.getElementById('scanBtn');
-
-      const currentId = (new URL(location.href)).searchParams.get('id') || '—';
-      spanVal.textContent = currentId;
-
-      function enterEdit(){
-        spanVal.style.display = 'none';
-        input.style.display = 'inline-block';
-        openBtn.style.display = 'inline-block';
-        clearBtn.style.display = 'inline-block';
-        input.value = (currentId !== '—') ? currentId : '';
-        input.focus(); input.select();
-      }
-      function exitEdit(){
-        spanVal.style.display = 'inline';
-        input.style.display = 'none';
-        openBtn.style.display = 'none';
-        clearBtn.style.display = 'none';
-      }
-      spanVal.addEventListener('click', enterEdit);
-      clearBtn.addEventListener('click', ()=>{ input.value=''; input.focus(); });
-      openBtn.addEventListener('click', ()=> gotoId(input.value));
-      input.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter') gotoId(input.value);
-        if(e.key === 'Escape') exitEdit();
-      });
-      input.addEventListener('paste', ()=> setTimeout(()=>{ input.value = extractId(input.value); },0));
-
-      if(!('BarcodeDetector' in window)){ scanBtn.style.display='none'; }
-    })();
-
-    /* ===== Escáner (QR / Code128) ===== */
-    (function setupScanner(){
-      if(!('BarcodeDetector' in window)) return;
-
-      const overlay = document.getElementById('scanOverlay');
-      const video   = document.getElementById('scanVideo');
-      const status  = document.getElementById('scanStatus');
-      const openBtn = document.getElementById('scanBtn');
-      const closeBtn= document.getElementById('closeScanBtn');
-
-      let stream = null;
-      let running = false;
-      const detector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','code_93','ean_13'] });
-
-      async function start(){
-        try{
-          overlay.style.display='flex';
-          status.textContent = 'Inicializando cámara…';
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
-          video.srcObject = stream;
-          running = true;
-          tick();
-        }catch(err){
-          status.innerHTML = '<span class="error">No se pudo abrir la cámara</span>';
-        }
-      }
-      function stop(){
-        running = false;
-        if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-        overlay.style.display='none';
-      }
-      async function tick(){
-        if(!running) return;
-        try{
-          const codes = await detector.detect(video);
-          if(codes && codes.length){
-            const raw = (codes[0].rawValue || '').trim();
-            if(raw){ stop(); gotoId(raw); return; }
-          }
-        }catch(_){}
-        requestAnimationFrame(tick);
-      }
-      openBtn.addEventListener('click', start);
-      closeBtn.addEventListener('click', stop);
-      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) stop(); });
-    })();
-
-    /* ===== App ===== */
+    // ——— App ———
     async function main() {
       const id = getId();
       const statusEl = document.getElementById('status');
       const cardEl = document.getElementById('card');
       const rowsEl = document.getElementById('rows');
+      const badge = document.getElementById('badge');
       const extraLinks = document.getElementById('extra-links');
       const imgWrap = document.getElementById('imgWrap');
+
+      const idInput = document.getElementById('idInput');
+      if (id) {
+        badge.textContent = `ID: ${id}`;
+        idInput.value = id;
+      } else {
+        badge.textContent = 'ID: —';
+      }
 
       if (!id) { statusEl.innerHTML = '<span class="error">Falta parámetro "id"</span>'; return; }
 
@@ -571,6 +484,7 @@
           return '';
         };
 
+        // Valores crudos (para lógica) + formateo fechas para mostrar
         const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
         const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
         const estadoRaw          = get('ESTADO');
@@ -589,7 +503,7 @@
 
         rowsEl.innerHTML = itemsStatic.map(([k,v]) => `<div class="row"><b>${k}:</b> ${v || ''}</div>`).join('');
 
-        // Editables
+        // ===== Editables (Netlify endpoints) =====
         const guardarCambio = async (payload, status, afterOk) => {
           const r = await fetch('/api/update', {
             method: 'POST',
@@ -614,12 +528,13 @@
           if (r2.ok && d2 && !d2.error) {
             document.getElementById('val-cantidad') && (document.getElementById('val-cantidad').textContent = d2.CANTIDAD ?? '');
             document.getElementById('val-ubicacion_almacen') && (document.getElementById('val-ubicacion_almacen').textContent =
-              d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICIÓN'] || '');
+              d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICIÓN'] || d2['UBICACIÓN'] || '');
             document.getElementById('val-estado') && (document.getElementById('val-estado').textContent = d2.ESTADO ?? '');
             applyAlert(d2.FECHA_INGRESO ?? d2['FECHA INGRESO'], d2.ESTADO);
           }
         }
 
+        // CANTIDAD
         rowsEl.appendChild(editableRow({
           label: 'CANTIDAD',
           value: get('CANTIDAD'),
@@ -627,10 +542,11 @@
           type: 'number',
           onSave: async (newVal, status, done) => {
             if (isNaN(newVal) || newVal < 0) throw new Error('Cantidad inválida');
-            await guardarCambio({ id, cantidad: Number(newVal) }, status, done);
+            await guardarCambio({ id, cantidad: Number(newVal) }, status, () => done());
           }
         }));
 
+        // UBICACIÓN
         rowsEl.appendChild(editableRow({
           label: 'UBICACIÓN',
           value: get('UBICACION_ALMACEN', ['UBICACIÓN']),
@@ -638,10 +554,11 @@
           type: 'text',
           onSave: async (newVal, status, done) => {
             if (!newVal) throw new Error('Ubicación vacía');
-            await guardarCambio({ id, ubicacion_almacen: newVal }, status, done);
+            await guardarCambio({ id, ubicacion_almacen: newVal }, status, () => done());
           }
         }));
 
+        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
           value: estadoRaw,
@@ -657,27 +574,74 @@
           }
         }));
 
+        // Link ficha/imagen
         const url = get('URL');
-        const extraLinks = document.getElementById('extra-links');
         if (url) {
           extraLinks.innerHTML = fieldRow('Ficha/Imagen', `<a href="${url}" target="_blank" rel="noreferrer">Abrir</a>`);
         }
 
-        document.getElementById('card').style.display = 'block';
+        // Mostrar tarjeta, esconder status
+        cardEl.style.display = 'block';
         statusEl.style.display = 'none';
 
+        // Imagen
         const raw = get('IMAGEN_URL', ['IMAGEN URL']);
-        const imgWrap = document.getElementById('imgWrap');
         if (raw) {
           const imgUrl = normalizeSharePointImageUrl(raw);
           imgWrap.innerHTML = `
-            <img src="${imgUrl}" alt="Etiqueta" class="hero-img" loading="lazy" referrerpolicy="no-referrer" />
-            <div style="margin-top:6px"><a href="${imgUrl}" target="_blank" rel="noreferrer">Abrir en pestaña nueva</a></div>
+            <img
+              src="${imgUrl}"
+              alt="Etiqueta"
+              class="hero-img"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+            <div style="margin-top:6px">
+              <a href="${imgUrl}" target="_blank" rel="noreferrer">Abrir en pestaña nueva</a>
+            </div>
           `;
         } else {
           imgWrap.innerHTML = '<span class="muted">Sin imagen configurada.</span>';
         }
 
+        // — Devolución —
+        const dev = document.getElementById('devolucion');
+        const devForm = document.getElementById('devForm');
+        const devStatus = document.getElementById('devStatus');
+        dev.style.display = 'block';
+
+        devForm.addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          devStatus.textContent = 'Enviando…';
+          const payload = {
+            id,
+            cantidad_devolucion: Number(devForm.cantidad_devolucion.value),
+            linea: devForm.linea.value || undefined,
+            observacion: devForm.observacion.value || undefined,
+            usuario: devForm.usuario.value || undefined
+          };
+          Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+          try {
+            const rr = await fetch('/api/devolucion', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const t2 = await rr.text();
+            let out; try { out = JSON.parse(t2); } catch { out = { raw: t2 }; }
+            if (!rr.ok || out.error) {
+              devStatus.innerHTML = `<span class="error">Error: ${out.message || out.error || rr.status}</span>`;
+              return;
+            }
+            devStatus.textContent = 'OK. Devolución cargada.';
+            setTimeout(() => window.location.reload(), 800);
+          } catch (e) {
+            devStatus.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
+          }
+        });
+
+        // Alerta visual inicial
         applyAlert(fechaIngresoRaw, estadoRaw);
 
       } catch (e) {
@@ -686,10 +650,120 @@
       }
     }
 
+    // ====== Header: buscar / pegar / escanear ======
+    (function initHeaderSearch(){
+      const idInput = document.getElementById('idInput');
+      const goBtn   = document.getElementById('goBtn');
+      const pasteBtn= document.getElementById('pasteBtn');
+      const scanBtn = document.getElementById('scanBtn');
+
+      idInput.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){
+          const id = extractIdFromAny(idInput.value);
+          gotoId(id);
+        }
+      });
+      goBtn.addEventListener('click', ()=>{
+        const id = extractIdFromAny(idInput.value);
+        gotoId(id);
+      });
+      pasteBtn.addEventListener('click', async ()=>{
+        try{
+          const txt = await navigator.clipboard.readText();
+          if(!txt){ toast('Portapapeles vacío', true); return; }
+          const id = extractIdFromAny(txt);
+          if(!id){ toast('No se encontró un ID en el texto pegado', true); return; }
+          idInput.value = id;
+          gotoId(id);
+        }catch(err){
+          toast('No se pudo leer el portapapeles', true);
+        }
+      });
+
+      // Scanner
+      scanBtn.addEventListener('click', openScanModal);
+    })();
+
+    // ====== Escáner (QR + Code128) ======
+    let scanStream = null;
+    let scanRaf = 0;
+    let barcodeDetector = null;
+
+    async function openScanModal(){
+      const modal = document.getElementById('scanModal');
+      const video = document.getElementById('scanVideo');
+      const hint  = document.getElementById('scanHint');
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden','false');
+
+      try{
+        // Soporte BarcodeDetector
+        if('BarcodeDetector' in window){
+          const formats = ['qr_code','code_128'];
+          barcodeDetector = new BarcodeDetector({ formats });
+        }else{
+          barcodeDetector = null;
+          hint.innerHTML = 'Tu navegador no soporta detección de códigos. Usá "Pegar" o escribí el ID.';
+        }
+
+        // Cámara
+        scanStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        video.srcObject = scanStream;
+
+        if(barcodeDetector){
+          const loop = async () => {
+            try{
+              const codes = await barcodeDetector.detect(video);
+              if(codes && codes.length){
+                const raw = (codes[0].rawValue||'').trim();
+                const id = extractIdFromAny(raw);
+                if(id){
+                  await closeScanModal();
+                  gotoId(id);
+                  return;
+                }else{
+                  // Si es QR con URL sin id explícito, no navegamos
+                  hint.textContent = 'Código leído, pero no se encontró un ID. Probá de nuevo o usá "Pegar".';
+                }
+              }
+            }catch(e){ /* ignoramos errores de frame */ }
+            scanRaf = requestAnimationFrame(loop);
+          };
+          scanRaf = requestAnimationFrame(loop);
+        }
+      }catch(err){
+        hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
+      }
+
+      // acciones cierre
+      document.getElementById('scanStopBtn').onclick = closeScanModal;
+      document.getElementById('closeScanBtn').onclick = closeScanModal;
+      modal.addEventListener('click', (e)=>{ if(e.target === modal) closeScanModal(); });
+    }
+
+    async function closeScanModal(){
+      const modal = document.getElementById('scanModal');
+      const video = document.getElementById('scanVideo');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden','true');
+      if(scanRaf) cancelAnimationFrame(scanRaf);
+      scanRaf = 0;
+      if(video) video.pause && video.pause();
+      if(scanStream){
+        scanStream.getTracks().forEach(t=>t.stop());
+        scanStream = null;
+      }
+    }
+
+    // Go
     main();
   </script>
 </body>
 </html>
+
 
 
 
