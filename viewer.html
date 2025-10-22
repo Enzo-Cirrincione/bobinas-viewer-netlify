@@ -71,7 +71,6 @@
       background: var(--card);
       padding:18px;
       box-shadow: var(--shadow);
-      transition: box-shadow .15s ease, outline-color .15s ease;
     }
     .title{
       margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:.2px;
@@ -114,10 +113,10 @@
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
 
-    /* 🚨 Contorno de alerta (>=2 años o BLOQUEADA/BLOQUEDA/…) */
+    /* ⬇️ NUEVO: contorno rojo cuando aplica la alerta */
     .alerta-roja{
       outline: 3px solid var(--danger);
-      box-shadow: 0 0 0 8px color-mix(in oklab, var(--danger) 24%, transparent);
+      box-shadow: 0 0 0 8px rgba(239,68,68,.24);
     }
   </style>
 </head>
@@ -181,6 +180,12 @@
   </div>
 
   <script>
+    // ===== Endpoints Netlify =====
+    // GET:    /api/bobina?id=CQ1
+    // UPDATE: /api/update
+    // DEV:    /api/devolucion
+    const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
+
     // ——— Helpers ———
     function getId() {
       const params = new URLSearchParams(window.location.search);
@@ -192,15 +197,13 @@
 
     function normalizeSharePointImageUrl(u) {
       if (!u) return u;
-      u = u.replace(/%2520/g, '%20'); // corrige doble encode
+      u = u.replace(/%2520/g, '%20');
       try {
         const url = new URL(u);
-        // Links de compartición
         if (url.pathname.startsWith('/:u:/') || url.pathname.startsWith('/:i:/') || url.pathname.startsWith('/:x:/')) {
           if (!url.searchParams.has('download')) url.searchParams.set('download','1');
           return url.toString();
         }
-        // Vista de biblioteca -> descargar directo
         if (url.pathname.includes('/Forms/AllItems.aspx')) {
           const idParam = url.searchParams.get('id');
           if (idParam) {
@@ -217,7 +220,7 @@
       return `<div class="row"><b>${label}:</b> ${value ?? ''}</div>`;
     }
 
-    // Normalizadores y fechas
+    // ===== NUEVOS HELPERS para fechas/alerta =====
     const stripDiacritics = (s)=> (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const normText = (s)=> stripDiacritics(String(s||'')).replace(/\s+/g,' ').trim().toUpperCase();
 
@@ -225,7 +228,7 @@
       if (v == null || v === '') return null;
       const s = String(v).trim();
       if (/^\d+(\.\d+)?$/.test(s)) {
-        // Excel serial (base 1899-12-30/31)
+        // serie Excel
         const t = Math.round((Number(s) - 25569) * 86400 * 1000);
         const d = new Date(t);
         return isNaN(d) ? null : d;
@@ -233,6 +236,7 @@
       const d = new Date(s);
       return isNaN(d) ? null : d;
     }
+
     function formatDMY(v){
       const d = parseDateFlexible(v);
       if (!d) return v || '—';
@@ -241,10 +245,36 @@
       const yy = d.getFullYear();
       return `${dd}/${mm}/${yy}`;
     }
+
     function yearsDiff(a,b){ return (b - a) / (365.25 * 24 * 3600 * 1000); }
 
-    // ——— Fila editable (texto o número) ———
-    function editableRow({ label, value, field, type = 'text', onSave }) {
+    function applyAlert(fechaIngresoRaw, estadoRaw){
+      const cardEl = document.getElementById('card');
+      if (!cardEl) return;
+      let danger = false;
+
+      const d = parseDateFlexible(fechaIngresoRaw);
+      if (d && yearsDiff(d, new Date()) >= 2) danger = true;
+
+      const estN = normText(estadoRaw);
+      if (estN.startsWith('BLOQUE')) danger = true;
+
+      cardEl.classList.toggle('alerta-roja', danger);
+    }
+    // ===== FIN NUEVOS HELPERS =====
+
+    // Normaliza ESTADO para que el select lo reconozca (se mantiene igual)
+    function normalizeEstado(s){
+      if (s == null) return '';
+      const t = String(s).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if (['ALMACEN','ALMACEN ','DEPÓSITO','DEPOSITO','DEPOSITO '].includes(t)) return 'ALMACEN';
+      if (['LINEA','EN LINEA','EN  LINEA','LÍNEA'].includes(t)) return 'LINEA';
+      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA';
+      return String(s).trim();
+    }
+
+    // ——— Editable rows ———
+    function editableRow({ label, value, field, type = 'text', options = [], onSave }) {
       const row = document.createElement('div');
       row.className = 'row';
 
@@ -255,11 +285,31 @@
       btn.type = 'button'; btn.className = 'btn btn-ghost'; btn.textContent = 'Editar';
 
       const inputWrap = document.createElement('span'); inputWrap.style.display = 'none';
-      const input = document.createElement('input');
-      input.className = 'input';
-      input.type = (type === 'number') ? 'number' : 'text';
-      if (type === 'number') { input.min = '0'; input.step = '1'; }
-      input.value = value ?? '';
+      let input;
+      if (type === 'select') {
+        input = document.createElement('select'); input.className = 'input';
+        const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '(seleccionar)'; input.appendChild(optEmpty);
+        (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
+
+        const current = (value ?? '').toString().trim();
+        const norm = normalizeEstado(current);
+        const has = Array.from(input.options).some(o => o.value === norm || o.value === current);
+        if (current) {
+          if (!has) {
+            const opt = new Option(current, current);
+            input.add(opt);
+            input.value = current;
+          } else {
+            input.value = (Array.from(input.options).some(o=>o.value===norm) ? norm : current);
+          }
+        } else {
+          input.value = '';
+        }
+      } else {
+        input = document.createElement('input'); input.className = 'input'; input.type = (type === 'number') ? 'number' : 'text';
+        if (type === 'number') { input.min = '0'; input.step = '1'; }
+        input.value = value ?? '';
+      }
 
       const save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Guardar';
       const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn btn-ghost'; cancel.textContent = 'Cancelar';
@@ -280,7 +330,7 @@
         span.style.display = 'none';
         inputWrap.style.display = 'inline-flex';
         input.focus();
-        input.select();
+        if (type !== 'select') input.select();
       }
       function exitEdit() {
         btn.style.display = 'inline-block';
@@ -323,7 +373,12 @@
 
       try {
         statusEl.textContent = 'Consultando…';
-        const r = await fetch(`/api/bobina/${encodeURIComponent(id)}`);
+
+        const r = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
         const txt = await r.text();
         let data; try { data = JSON.parse(txt); } catch { data = { error:'parse_error', raw:txt }; }
 
@@ -332,32 +387,35 @@
           return;
         }
 
-        // Render ficha (aplicando formato dd/mm/yyyy a fechas posibles)
         const get = (k, alts=[]) => {
           if (data[k] != null && data[k] !== '') return data[k];
           for (const a of alts) if (data[a] != null && data[a] !== '') return data[a];
           return '';
         };
 
-        const fechaIngresoRaw = get('FECHA_INGRESO', ['FECHA INGRESO']);
+        // Valores crudos (para lógica) + formateo fechas para mostrar
+        const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
         const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
+        const estadoRaw          = get('ESTADO');
 
         const itemsStatic = [
           ['ID_FILA', get('ID_FILA') || get('ID')],
           ['CÓDIGO', get('CODIGO', ['CÓDIGO'])],
           ['DESCRIPCIÓN', get('DESCRIPCION', ['DESCRIPCIÓN'])],
           ['PROVEEDOR', get('PROVEEDOR')],
+          // ⬇️ Fechas formateadas a dd/mm/yyyy
           ['FECHA INGRESO', formatDMY(fechaIngresoRaw) || '—'],
           ['LOTE', get('LOTE')],
           ['FECHA DEVOLUCIÓN', formatDMY(fechaDevolucionRaw) || '—'],
           ['LÍNEA', get('ULTIMA_LINEA', ['LINEA'])],
           ['OBSERVACIÓN', get('OBSERVACION', ['OBSERVACIÓN'])]
         ];
+
         rowsEl.innerHTML = itemsStatic.map(([k,v]) => `<div class="row"><b>${k}:</b> ${v || ''}</div>`).join('');
 
-        // Editables
+        // ===== Editables (Netlify endpoints) =====
         const guardarCambio = async (payload, status, afterOk) => {
-          const r = await fetch('/api/bobina/update', {
+          const r = await fetch('/api/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -371,7 +429,10 @@
         };
 
         async function refetchAndPatch() {
-          const r2 = await fetch(`/api/bobina/${encodeURIComponent(id)}?v=${Date.now()}`, { cache: 'no-store' });
+          const r2 = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&v=${Date.now()}`, {
+            cache: 'no-store',
+            headers: { 'Accept': 'application/json' }
+          });
           const t2 = await r2.text();
           let d2; try { d2 = JSON.parse(t2); } catch { d2 = null; }
           if (r2.ok && d2 && !d2.error) {
@@ -379,10 +440,13 @@
             document.getElementById('val-ubicacion_almacen') && (document.getElementById('val-ubicacion_almacen').textContent =
               d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICACIÓN'] || '');
             document.getElementById('val-estado') && (document.getElementById('val-estado').textContent = d2.ESTADO ?? '');
+
+            // actualizar alerta si cambió estado/fecha
+            applyAlert(d2.FECHA_INGRESO ?? d2['FECHA INGRESO'], d2.ESTADO);
           }
         }
 
-        // CANTIDAD (number)
+        // CANTIDAD
         rowsEl.appendChild(editableRow({
           label: 'CANTIDAD',
           value: get('CANTIDAD'),
@@ -394,7 +458,7 @@
           }
         }));
 
-        // UBICACIÓN (text)
+        // UBICACIÓN
         rowsEl.appendChild(editableRow({
           label: 'UBICACIÓN',
           value: get('UBICACION_ALMACEN', ['UBICACIÓN']),
@@ -406,44 +470,32 @@
           }
         }));
 
-        // ESTADO (texto libre, sin desplegable; se muestra tal cual viene de Excel)
-        const estadoActual = get('ESTADO'); // visible tal cual
+        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
-          value: estadoActual,
+          value: estadoRaw,
           field: 'estado',
-          type: 'text',
+          type: 'select',
+          options: ['ALMACEN', 'LINEA', 'BLOQUEADA'],
           onSave: async (newVal, status, done) => {
-            // permitir vacío o cualquier texto
-            await guardarCambio({ id, estado: newVal }, status, () => done());
-            // tras guardar, re-evaluamos el contorno rojo
-            applyAlert(formatDMY(fechaIngresoRaw), newVal);
+            if (!newVal) throw new Error('Seleccioná un estado');
+            await guardarCambio({ id, estado: newVal }, status, () => {
+              // actualizar alerta con el nuevo estado
+              applyAlert(fechaIngresoRaw, newVal);
+              done();
+            });
           }
         }));
 
-        // Links extra
+        // Link ficha/imagen
         const url = get('URL');
         if (url) {
           extraLinks.innerHTML = fieldRow('Ficha/Imagen', `<a href="${url}" target="_blank" rel="noreferrer">Abrir</a>`);
         }
 
-        // Mostrar ficha
+        // Mostrar tarjeta, esconder status
         cardEl.style.display = 'block';
         statusEl.style.display = 'none';
-
-        // 🚨 Alerta: contorno rojo si >= 2 años o estado BLOQUE… (robusto ante typos: “bloqueda”, etc.)
-        function applyAlert(fechaIngDisplay, estadoVal){
-          const d = parseDateFlexible(fechaIngDisplay || fechaIngresoRaw);
-          let danger = false;
-          if (d) {
-            const diffYears = yearsDiff(d, new Date());
-            if (diffYears >= 2) danger = true;
-          }
-          const estN = normText(estadoVal != null ? estadoVal : estadoActual);
-          if (estN.startsWith('BLOQUE')) danger = true; // BLOQUEADA, BLOQUEDA, BLOQUEO, etc.
-          cardEl.classList.toggle('alerta-roja', danger);
-        }
-        applyAlert(formatDMY(fechaIngresoRaw), estadoActual);
 
         // Imagen
         const raw = get('IMAGEN_URL', ['IMAGEN URL']);
@@ -465,7 +517,7 @@
           imgWrap.innerHTML = '<span class="muted">Sin imagen configurada.</span>';
         }
 
-        // — Devolución —
+        // — Devolución (Netlify endpoint) —
         const dev = document.getElementById('devolucion');
         const devForm = document.getElementById('devForm');
         const devStatus = document.getElementById('devStatus');
@@ -484,7 +536,7 @@
           Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
           try {
-            const rr = await fetch('/api/bobina/devolucion', {
+            const rr = await fetch('/api/devolucion', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -502,15 +554,20 @@
           }
         });
 
+        // ⬅️ Aplicar alerta visual inicial
+        applyAlert(fechaIngresoRaw, estadoRaw);
+
       } catch (e) {
         const statusEl = document.getElementById('status');
         statusEl.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
       }
     }
+
     main();
   </script>
 </body>
 </html>
+
 
 
 
