@@ -55,16 +55,12 @@
     }
     .brand .dot{ width:10px; height:10px; border-radius:999px; background:var(--accent) }
     .id-badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px; background: rgba(79,70,229,.15); color: var(--text);
+      display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap;
+      padding:6px 10px; border-radius:999px; background: rgba(79,70,229,.12); color: var(--text);
       border:1px solid rgba(79,70,229,.35); font-weight:600; font-size:13px;
     }
-    .grid{
-      display:grid; grid-template-columns: 1.1fr .9fr; gap:16px;
-    }
-    @media (max-width: 900px){
-      .grid{ grid-template-columns: 1fr }
-    }
+    .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; }
+    @media (max-width: 900px){ .grid{ grid-template-columns: 1fr } }
     .card{
       border:1px solid var(--border);
       border-radius: var(--radius);
@@ -72,14 +68,10 @@
       padding:18px;
       box-shadow: var(--shadow);
     }
-    .title{
-      margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:.2px;
-    }
+    .title{ margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:.2px; }
     .rows{ display:grid; gap:10px }
     .row{ display:flex; align-items:baseline; gap:10px; line-height:1.35 }
-    .row b{
-      min-width: 190px; font-weight:700; color: var(--muted);
-    }
+    .row b{ min-width: 190px; font-weight:700; color: var(--muted); }
     .muted{ color: var(--muted) }
     .error{ color: var(--danger) }
     a{ color:var(--accent); text-decoration: none }
@@ -113,24 +105,19 @@
     .skeleton{ height:14px; background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.02), rgba(255,255,255,.08)); border-radius:8px; animation: pulse 1.2s infinite }
     @keyframes pulse{ 0%{ background-position:-200px 0 } 100%{ background-position:200px 0 } }
 
-    /* ⬇️ NUEVO: contorno rojo cuando aplica la alerta */
-    .alerta-roja{
-      outline: 3px solid var(--danger);
-      box-shadow: 0 0 0 8px rgba(239,68,68,.24);
+    /* === Overlay de escaneo === */
+    .scan-overlay{
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,.6);
+      display: none; align-items: center; justify-content: center;
     }
-    /* Overlay de escaneo */
-.scan-overlay{
-  position: fixed; inset: 0; z-index: 50;
-  background: rgba(0,0,0,.6);
-  display: none; align-items: center; justify-content: center;
-}
-.scan-card{
-  background: var(--card); color: var(--text);
-  border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
-  width:min(680px, 92%); padding:14px;
-}
-.scan-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
-.scan-video{ width:100%; border-radius:12px; border:1px solid var(--border); background:#000; }
+    .scan-card{
+      background: var(--card); color: var(--text);
+      border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+      width:min(680px, 92%); padding:14px;
+    }
+    .scan-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .scan-video{ width:100%; border-radius:12px; border:1px solid var(--border); background:#000; }
   </style>
 </head>
 <body>
@@ -140,19 +127,20 @@
         <div class="dot"></div>
         <div>Bobinas • Viewer</div>
       </div>
-      <!-- Reemplaza el div#badge por este bloque -->
-<div id="badge" class="id-badge" style="gap:6px;">
-  <span id="badgeLabel">ID:</span>
-  <span id="badgeValue" title="Click para editar" style="cursor:text;">—</span>
 
-  <input id="idInput" class="input" type="text" inputmode="numeric" 
-         placeholder="Ingresá ID o pega URL" 
-         style="display:none; width:180px; padding:6px 8px; font-weight:600" />
+      <!-- Badge EDITABLE + acciones -->
+      <div id="badge" class="id-badge" style="gap:6px;">
+        <span id="badgeLabel">ID:</span>
+        <span id="badgeValue" title="Click para editar" style="cursor:text;">—</span>
 
-  <button id="openBtn" class="btn" style="display:none; padding:6px 10px;">Abrir</button>
-  <button id="clearBtn" class="btn btn-ghost" style="display:none; padding:6px 10px;">Limpiar</button>
-  <button id="scanBtn" class="btn btn-ghost" style="padding:6px 10px;">Escanear</button>
-</div>
+        <input id="idInput" class="input" type="text" inputmode="text"
+               placeholder="Ingresá ID o pega URL"
+               style="display:none; width:200px; padding:6px 8px; font-weight:600" />
+
+        <button id="openBtn"  class="btn"        style="display:none; padding:6px 10px;">Abrir</button>
+        <button id="clearBtn" class="btn btn-ghost" style="display:none; padding:6px 10px;">Limpiar</button>
+        <button id="scanBtn"  class="btn btn-ghost"  style="padding:6px 10px;">Escanear</button>
+      </div>
     </header>
 
     <div class="grid">
@@ -204,11 +192,20 @@
     <div id="status" class="muted">Cargando…</div>
   </div>
 
+  <!-- Overlay de escaneo (QR / Code128) -->
+  <div id="scanOverlay" class="scan-overlay" aria-hidden="true">
+    <div class="scan-card">
+      <div class="scan-toolbar">
+        <strong>Escanear código (QR / Code128)</strong>
+        <button id="closeScanBtn" class="btn btn-ghost">Cancelar</button>
+      </div>
+      <video id="scanVideo" class="scan-video" autoplay playsinline></video>
+      <div id="scanStatus" class="muted" style="margin-top:6px">Buscando…</div>
+    </div>
+  </div>
+
   <script>
     // ===== Endpoints Netlify =====
-    // GET:    /api/bobina?id=CQ1
-    // UPDATE: /api/update
-    // DEV:    /api/devolucion
     const FLOW_GET_BOBINA_URL = "https://defaultd83e43d1620044fbb4f6a908d91c2e.22.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ddf0b0a84bda4428b59d464812b6b734/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SylYZCLZTHEF4kj1OD9YCpCGAfUuA2T5R8dS5rvD25s";
 
     // ——— Helpers ———
@@ -245,143 +242,108 @@
       return `<div class="row"><b>${label}:</b> ${value ?? ''}</div>`;
     }
 
-    // ===== NUEVOS HELPERS para fechas/alerta =====
-    const stripDiacritics = (s)=> (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const normText = (s)=> stripDiacritics(String(s||'')).replace(/\s+/g,' ').trim().toUpperCase();
-
-    function parseDateFlexible(v){
-      if (v == null || v === '') return null;
-      const s = String(v).trim();
-      if (/^\d+(\.\d+)?$/.test(s)) {
-        // serie Excel
-        const t = Math.round((Number(s) - 25569) * 86400 * 1000);
-        const d = new Date(t);
-        return isNaN(d) ? null : d;
-      }
-      const d = new Date(s);
-      return isNaN(d) ? null : d;
+    // ——— Badge editable + navegación por ID/URL ———
+    function extractId(raw){
+      if(!raw) return '';
+      const s = String(raw).trim();
+      try{
+        const u = new URL(s);
+        const qid = u.searchParams.get('id');
+        if(qid) return qid.trim();
+        const segs = u.pathname.split('/').filter(Boolean);
+        if(segs.length) return segs[segs.length-1];
+      }catch{ /* no es URL */ }
+      return s;
     }
-
-    function formatDMY(v){
-      const d = parseDateFlexible(v);
-      if (!d) return v || '—';
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const yy = d.getFullYear();
-      return `${dd}/${mm}/${yy}`;
+    function gotoId(id){
+      const clean = extractId(id);
+      if(!clean) return;
+      const url = new URL(location.href);
+      url.searchParams.set('id', clean);
+      location.href = url.toString();
     }
+    (function setupEditableBadge(){
+      const spanVal = document.getElementById('badgeValue');
+      const input   = document.getElementById('idInput');
+      const openBtn = document.getElementById('openBtn');
+      const clearBtn= document.getElementById('clearBtn');
+      const scanBtn = document.getElementById('scanBtn');
 
-    function yearsDiff(a,b){ return (b - a) / (365.25 * 24 * 3600 * 1000); }
+      const currentId = (new URL(location.href)).searchParams.get('id') || '—';
+      spanVal.textContent = currentId;
 
-    function applyAlert(fechaIngresoRaw, estadoRaw){
-      const cardEl = document.getElementById('card');
-      if (!cardEl) return;
-      let danger = false;
-
-      const d = parseDateFlexible(fechaIngresoRaw);
-      if (d && yearsDiff(d, new Date()) >= 2) danger = true;
-
-      const estN = normText(estadoRaw);
-      if (estN.startsWith('BLOQUE')) danger = true;
-
-      cardEl.classList.toggle('alerta-roja', danger);
-    }
-    // ===== FIN NUEVOS HELPERS =====
-
-    // Normaliza ESTADO para que el select lo reconozca (se mantiene igual)
-    function normalizeEstado(s){
-      if (s == null) return '';
-      const t = String(s).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      if (['ALMACEN','ALMACEN ','DEPÓSITO','DEPOSITO','DEPOSITO '].includes(t)) return 'ALMACEN';
-      if (['LINEA','EN LINEA','EN  LINEA','LÍNEA'].includes(t)) return 'LINEA';
-      if (['BAJA','BLOQUEADA','BLOQUEADA '].includes(t)) return 'BLOQUEADA';
-      return String(s).trim();
-    }
-
-    // ——— Editable rows ———
-    function editableRow({ label, value, field, type = 'text', options = [], onSave }) {
-      const row = document.createElement('div');
-      row.className = 'row';
-
-      const bold = document.createElement('b'); bold.textContent = label + ':';
-      const span = document.createElement('span'); span.id = `val-${field}`; span.textContent = value ?? '';
-
-      const btn = document.createElement('button');
-      btn.type = 'button'; btn.className = 'btn btn-ghost'; btn.textContent = 'Editar';
-
-      const inputWrap = document.createElement('span'); inputWrap.style.display = 'none';
-      let input;
-      if (type === 'select') {
-        input = document.createElement('select'); input.className = 'input';
-        const optEmpty = document.createElement('option'); optEmpty.value = ''; optEmpty.textContent = '(seleccionar)'; input.appendChild(optEmpty);
-        (options || []).forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; input.appendChild(opt); });
-
-        const current = (value ?? '').toString().trim();
-        const norm = normalizeEstado(current);
-        const has = Array.from(input.options).some(o => o.value === norm || o.value === current);
-        if (current) {
-          if (!has) {
-            const opt = new Option(current, current);
-            input.add(opt);
-            input.value = current;
-          } else {
-            input.value = (Array.from(input.options).some(o=>o.value===norm) ? norm : current);
-          }
-        } else {
-          input.value = '';
-        }
-      } else {
-        input = document.createElement('input'); input.className = 'input'; input.type = (type === 'number') ? 'number' : 'text';
-        if (type === 'number') { input.min = '0'; input.step = '1'; }
-        input.value = value ?? '';
+      function enterEdit(){
+        spanVal.style.display = 'none';
+        input.style.display = 'inline-block';
+        openBtn.style.display = 'inline-block';
+        clearBtn.style.display = 'inline-block';
+        input.value = (currentId !== '—') ? currentId : '';
+        input.focus(); input.select();
       }
-
-      const save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Guardar';
-      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn btn-ghost'; cancel.textContent = 'Cancelar';
-      const status = document.createElement('span'); status.className = 'status muted'; status.style.marginLeft = '8px';
-
-      inputWrap.appendChild(input);
-      inputWrap.appendChild(save);
-      inputWrap.appendChild(cancel);
-      inputWrap.appendChild(status);
-
-      row.appendChild(bold);
-      row.appendChild(span);
-      row.appendChild(btn);
-      row.appendChild(inputWrap);
-
-      function enterEdit() {
-        btn.style.display = 'none';
-        span.style.display = 'none';
-        inputWrap.style.display = 'inline-flex';
-        input.focus();
-        if (type !== 'select') input.select();
+      function exitEdit(){
+        spanVal.style.display = 'inline';
+        input.style.display = 'none';
+        openBtn.style.display = 'none';
+        clearBtn.style.display = 'none';
       }
-      function exitEdit() {
-        btn.style.display = 'inline-block';
-        span.style.display = 'inline';
-        inputWrap.style.display = 'none';
-        status.textContent = '';
-      }
-
-      btn.addEventListener('click', enterEdit);
-      cancel.addEventListener('click', exitEdit);
-
-      save.addEventListener('click', async () => {
-        const newValRaw = (type === 'number') ? Number(input.value) : input.value.trim();
-        status.textContent = 'Guardando…';
-        try {
-          await onSave(newValRaw, status, (finalVal) => {
-            span.textContent = (finalVal ?? newValRaw) || '';
-            exitEdit();
-          });
-        } catch (e) {
-          status.innerHTML = `<span class="error">${e?.message || 'Error'}</span>`;
-        }
+      spanVal.addEventListener('click', enterEdit);
+      clearBtn.addEventListener('click', ()=>{ input.value=''; input.focus(); });
+      openBtn.addEventListener('click', ()=> gotoId(input.value));
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter') gotoId(input.value);
+        if(e.key === 'Escape') exitEdit();
       });
+      input.addEventListener('paste', ()=> setTimeout(()=>{ input.value = extractId(input.value); },0));
 
-      return row;
-    }
+      if(!('BarcodeDetector' in window)){ scanBtn.style.display='none'; }
+    })();
+
+    // ——— Escáner con cámara (QR / Code128) ———
+    (function setupScanner(){
+      if(!('BarcodeDetector' in window)) return;
+
+      const overlay = document.getElementById('scanOverlay');
+      const video   = document.getElementById('scanVideo');
+      const status  = document.getElementById('scanStatus');
+      const openBtn = document.getElementById('scanBtn');
+      const closeBtn= document.getElementById('closeScanBtn');
+
+      let stream = null;
+      let running = false;
+      const detector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','code_93','ean_13'] });
+
+      async function start(){
+        try{
+          overlay.style.display='flex';
+          status.textContent = 'Inicializando cámara…';
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
+          video.srcObject = stream;
+          running = true;
+          tick();
+        }catch(err){
+          status.innerHTML = '<span class="error">No se pudo abrir la cámara</span>';
+        }
+      }
+      function stop(){
+        running = false;
+        if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+        overlay.style.display='none';
+      }
+      async function tick(){
+        if(!running) return;
+        try{
+          const codes = await detector.detect(video);
+          if(codes && codes.length){
+            const raw = (codes[0].rawValue || '').trim();
+            if(raw){ stop(); gotoId(raw); return; }
+          }
+        }catch(_){}
+        requestAnimationFrame(tick);
+      }
+      openBtn.addEventListener('click', start);
+      closeBtn.addEventListener('click', stop);
+      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) stop(); });
+    })();
 
     // ——— App ———
     async function main() {
@@ -389,24 +351,19 @@
       const statusEl = document.getElementById('status');
       const cardEl = document.getElementById('card');
       const rowsEl = document.getElementById('rows');
-      const badge = document.getElementById('badge');
       const extraLinks = document.getElementById('extra-links');
       const imgWrap = document.getElementById('imgWrap');
 
       if (!id) { statusEl.innerHTML = '<span class="error">Falta parámetro "id"</span>'; return; }
-      badge.textContent = `ID: ${id}`;
 
       try {
         statusEl.textContent = 'Consultando…';
-
         const r = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&t=${Date.now()}`, {
           cache: 'no-store',
           headers: { 'Accept': 'application/json' }
         });
-
         const txt = await r.text();
         let data; try { data = JSON.parse(txt); } catch { data = { error:'parse_error', raw:txt }; }
-
         if (!r.ok || data.error) {
           statusEl.innerHTML = `<span class="error">Error: ${data.message || data.error || r.status}</span>`;
           return;
@@ -418,27 +375,20 @@
           return '';
         };
 
-        // Valores crudos (para lógica) + formateo fechas para mostrar
-        const fechaIngresoRaw    = get('FECHA_INGRESO', ['FECHA INGRESO']);
-        const fechaDevolucionRaw = get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']);
-        const estadoRaw          = get('ESTADO');
-
         const itemsStatic = [
           ['ID_FILA', get('ID_FILA') || get('ID')],
           ['CÓDIGO', get('CODIGO', ['CÓDIGO'])],
           ['DESCRIPCIÓN', get('DESCRIPCION', ['DESCRIPCIÓN'])],
           ['PROVEEDOR', get('PROVEEDOR')],
-          // ⬇️ Fechas formateadas a dd/mm/yyyy
-          ['FECHA INGRESO', formatDMY(fechaIngresoRaw) || '—'],
+          ['FECHA INGRESO', get('FECHA_INGRESO', ['FECHA INGRESO']) || '—'],
           ['LOTE', get('LOTE')],
-          ['FECHA DEVOLUCIÓN', formatDMY(fechaDevolucionRaw) || '—'],
+          ['FECHA DEVOLUCIÓN', get('FECHA_DEVOLUCION', ['FECHA DEVOLUCIÓN']) || '—'],
           ['LÍNEA', get('ULTIMA_LINEA', ['LINEA'])],
           ['OBSERVACIÓN', get('OBSERVACION', ['OBSERVACIÓN'])]
         ];
-
         rowsEl.innerHTML = itemsStatic.map(([k,v]) => `<div class="row"><b>${k}:</b> ${v || ''}</div>`).join('');
 
-        // ===== Editables (Netlify endpoints) =====
+        // Editables (Netlify)
         const guardarCambio = async (payload, status, afterOk) => {
           const r = await fetch('/api/update', {
             method: 'POST',
@@ -452,7 +402,6 @@
           await refetchAndPatch();
           afterOk();
         };
-
         async function refetchAndPatch() {
           const r2 = await fetch(`${FLOW_GET_BOBINA_URL}&id=${encodeURIComponent(id)}&v=${Date.now()}`, {
             cache: 'no-store',
@@ -465,10 +414,45 @@
             document.getElementById('val-ubicacion_almacen') && (document.getElementById('val-ubicacion_almacen').textContent =
               d2.UBICACION_ALMACEN || d2['UBICACION ALMACEN'] || d2['UBICACIÓN'] || '');
             document.getElementById('val-estado') && (document.getElementById('val-estado').textContent = d2.ESTADO ?? '');
-
-            // actualizar alerta si cambió estado/fecha
-            applyAlert(d2.FECHA_INGRESO ?? d2['FECHA INGRESO'], d2.ESTADO);
           }
+        }
+
+        function editableRow({ label, value, field, type = 'text', onSave }) {
+          const row = document.createElement('div');
+          row.className = 'row';
+          const bold = document.createElement('b'); bold.textContent = label + ':';
+          const span = document.createElement('span'); span.id = `val-${field}`; span.textContent = value ?? '';
+
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'btn btn-ghost'; btn.textContent = 'Editar';
+
+          const inputWrap = document.createElement('span'); inputWrap.style.display = 'none';
+          const input = document.createElement('input');
+          input.className = 'input'; input.type = (type === 'number') ? 'number' : 'text';
+          if (type === 'number') { input.min = '0'; input.step = '1'; }
+          input.value = value ?? '';
+
+          const save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Guardar';
+          const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn btn-ghost'; cancel.textContent = 'Cancelar';
+          const status = document.createElement('span'); status.className = 'status muted'; status.style.marginLeft = '8px';
+
+          inputWrap.appendChild(input); inputWrap.appendChild(save); inputWrap.appendChild(cancel); inputWrap.appendChild(status);
+          row.appendChild(bold); row.appendChild(span); row.appendChild(btn); row.appendChild(inputWrap);
+
+          function enterEdit(){ btn.style.display='none'; span.style.display='none'; inputWrap.style.display='inline-flex'; input.focus(); input.select(); }
+          function exitEdit(){ btn.style.display='inline-block'; span.style.display='inline'; inputWrap.style.display='none'; status.textContent=''; }
+
+          btn.addEventListener('click', enterEdit);
+          cancel.addEventListener('click', exitEdit);
+          save.addEventListener('click', async ()=>{
+            const newValRaw = (type === 'number') ? Number(input.value) : input.value.trim();
+            status.textContent = 'Guardando…';
+            try{
+              await onSave(newValRaw, status, (finalVal)=>{ span.textContent = (finalVal ?? newValRaw) || ''; exitEdit(); });
+            }catch(e){ status.innerHTML = `<span class="error">${e?.message || 'Error'}</span>`; }
+          });
+
+          return row;
         }
 
         // CANTIDAD
@@ -479,10 +463,9 @@
           type: 'number',
           onSave: async (newVal, status, done) => {
             if (isNaN(newVal) || newVal < 0) throw new Error('Cantidad inválida');
-            await guardarCambio({ id, cantidad: Number(newVal) }, status, () => done());
+            await guardarCambio({ id, cantidad: Number(newVal) }, status, done);
           }
         }));
-
         // UBICACIÓN
         rowsEl.appendChild(editableRow({
           label: 'UBICACIÓN',
@@ -491,24 +474,18 @@
           type: 'text',
           onSave: async (newVal, status, done) => {
             if (!newVal) throw new Error('Ubicación vacía');
-            await guardarCambio({ id, ubicacion_almacen: newVal }, status, () => done());
+            await guardarCambio({ id, ubicacion_almacen: newVal }, status, done);
           }
         }));
-
-        // ESTADO (select de ayuda; si viene distinto, lo muestra igual)
+        // ESTADO (texto libre)
         rowsEl.appendChild(editableRow({
           label: 'ESTADO',
-          value: estadoRaw,
+          value: get('ESTADO'),
           field: 'estado',
-          type: 'select',
-          options: ['ALMACEN', 'LINEA', 'BLOQUEADA'],
+          type: 'text',
           onSave: async (newVal, status, done) => {
-            if (!newVal) throw new Error('Seleccioná un estado');
-            await guardarCambio({ id, estado: newVal }, status, () => {
-              // actualizar alerta con el nuevo estado
-              applyAlert(fechaIngresoRaw, newVal);
-              done();
-            });
+            if (!newVal) throw new Error('Ingresá un estado');
+            await guardarCambio({ id, estado: newVal }, status, done);
           }
         }));
 
@@ -518,7 +495,6 @@
           extraLinks.innerHTML = fieldRow('Ficha/Imagen', `<a href="${url}" target="_blank" rel="noreferrer">Abrir</a>`);
         }
 
-        // Mostrar tarjeta, esconder status
         cardEl.style.display = 'block';
         statusEl.style.display = 'none';
 
@@ -527,27 +503,19 @@
         if (raw) {
           const imgUrl = normalizeSharePointImageUrl(raw);
           imgWrap.innerHTML = `
-            <img
-              src="${imgUrl}"
-              alt="Etiqueta"
-              class="hero-img"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            />
+            <img src="${imgUrl}" alt="Etiqueta" class="hero-img" loading="lazy" referrerpolicy="no-referrer" />
             <div style="margin-top:6px">
               <a href="${imgUrl}" target="_blank" rel="noreferrer">Abrir en pestaña nueva</a>
-            </div>
-          `;
+            </div>`;
         } else {
           imgWrap.innerHTML = '<span class="muted">Sin imagen configurada.</span>';
         }
 
-        // — Devolución (Netlify endpoint) —
+        // Devolución
         const dev = document.getElementById('devolucion');
         const devForm = document.getElementById('devForm');
         const devStatus = document.getElementById('devStatus');
         dev.style.display = 'block';
-
         devForm.addEventListener('submit', async (ev) => {
           ev.preventDefault();
           devStatus.textContent = 'Enviando…';
@@ -579,151 +547,17 @@
           }
         });
 
-        // ⬅️ Aplicar alerta visual inicial
-        applyAlert(fechaIngresoRaw, estadoRaw);
-
       } catch (e) {
         const statusEl = document.getElementById('status');
         statusEl.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
       }
     }
-    // —— Utils para ID / URL —— //
-function extractId(raw){
-  if(!raw) return '';
-  const s = String(raw).trim();
-  try{
-    // si es URL, intento leer ?id=
-    const u = new URL(s);
-    const qid = u.searchParams.get('id');
-    if(qid) return qid.trim();
-    // si tiene forma .../XYZ al final y parece ID, tomo el último segmento
-    const segs = u.pathname.split('/').filter(Boolean);
-    if(segs.length) return segs[segs.length-1];
-  }catch{ /* no es URL */ }
-  return s;
-}
-function gotoId(id){
-  const clean = extractId(id);
-  if(!clean){ return; }
-  const url = new URL(location.href);
-  url.searchParams.set('id', clean);
-  // navegamos para recargar datos de esa bobina
-  location.href = url.toString();
-}
-
-// —— UI del badge editable —— //
-(function setupEditableBadge(){
-  const badge = document.getElementById('badge');
-  const spanVal = document.getElementById('badgeValue');
-  const input = document.getElementById('idInput');
-  const openBtn = document.getElementById('openBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const scanBtn = document.getElementById('scanBtn');
-
-  const currentId = (new URL(location.href)).searchParams.get('id') || '—';
-  spanVal.textContent = currentId;
-
-  function enterEdit(){
-    spanVal.style.display = 'none';
-    input.style.display = 'inline-block';
-    openBtn.style.display = 'inline-block';
-    clearBtn.style.display = 'inline-block';
-    input.value = (currentId !== '—') ? currentId : '';
-    input.focus(); input.select();
-  }
-  function exitEdit(){
-    spanVal.style.display = 'inline';
-    input.style.display = 'none';
-    openBtn.style.display = 'none';
-    clearBtn.style.display = 'none';
-  }
-
-  spanVal.addEventListener('click', enterEdit);
-  clearBtn.addEventListener('click', ()=>{ input.value=''; input.focus(); });
-  openBtn.addEventListener('click', ()=> gotoId(input.value));
-  input.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter'){ gotoId(input.value); }
-    if(e.key === 'Escape'){ exitEdit(); }
-  });
-  input.addEventListener('paste', (e)=>{
-    setTimeout(()=>{ input.value = extractId(input.value); }, 0);
-  });
-
-  // ocultar botón escanear si no hay soporte
-  if(!('BarcodeDetector' in window)){ scanBtn.style.display='none'; }
-})();
-  
-// —— Escaneo con cámara (BarcodeDetector) —— //
-(function setupScanner(){
-  if(!('BarcodeDetector' in window)) return;
-
-  const overlay = document.getElementById('scanOverlay');
-  const video = document.getElementById('scanVideo');
-  const status = document.getElementById('scanStatus');
-  const open = document.getElementById('scanBtn');
-  const close = document.getElementById('closeScanBtn');
-
-  let stream = null;
-  let running = false;
-  const detector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','code_93','ean_13'] });
-
-  async function start(){
-    try{
-      overlay.style.display='flex';
-      status.textContent = 'Inicializando cámara…';
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
-      video.srcObject = stream;
-      running = true;
-      tick();
-    }catch(err){
-      status.innerHTML = `<span class="error">No se pudo abrir la cámara</span>`;
-    }
-  }
-  function stop(){
-    running = false;
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-    overlay.style.display='none';
-  }
-
-  async function tick(){
-    if(!running) return;
-    try{
-      const codes = await detector.detect(video);
-      if(codes && codes.length){
-        const raw = (codes[0].rawValue || '').trim();
-        if(raw){
-          stop();
-          gotoId(raw);
-          return;
-        }
-      }
-    }catch(_){ /* ignorar detección fallida y continuar */ }
-    requestAnimationFrame(tick);
-  }
-
-  open.addEventListener('click', start);
-  close.addEventListener('click', stop);
-  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) stop(); });
-})();
-
 
     main();
   </script>
-  <div id="scanOverlay" class="scan-overlay" aria-hidden="true">
-  <div class="scan-card">
-    <div class="scan-toolbar">
-      <strong>Escanear código (QR / Code128)</strong>
-      <div style="display:flex; gap:8px">
-        <button id="closeScanBtn" class="btn btn-ghost">Cancelar</button>
-      </div>
-    </div>
-    <video id="scanVideo" class="scan-video" autoplay playsinline></video>
-    <div id="scanStatus" class="muted" style="margin-top:6px">Buscando…</div>
-  </div>
-</div>
-
 </body>
 </html>
+
 
 
 
