@@ -118,6 +118,19 @@
       outline: 3px solid var(--danger);
       box-shadow: 0 0 0 8px rgba(239,68,68,.24);
     }
+    /* Overlay de escaneo */
+.scan-overlay{
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,.6);
+  display: none; align-items: center; justify-content: center;
+}
+.scan-card{
+  background: var(--card); color: var(--text);
+  border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+  width:min(680px, 92%); padding:14px;
+}
+.scan-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.scan-video{ width:100%; border-radius:12px; border:1px solid var(--border); background:#000; }
   </style>
 </head>
 <body>
@@ -127,7 +140,19 @@
         <div class="dot"></div>
         <div>Bobinas • Viewer</div>
       </div>
-      <div id="badge" class="id-badge">ID: —</div>
+      <!-- Reemplaza el div#badge por este bloque -->
+<div id="badge" class="id-badge" style="gap:6px;">
+  <span id="badgeLabel">ID:</span>
+  <span id="badgeValue" title="Click para editar" style="cursor:text;">—</span>
+
+  <input id="idInput" class="input" type="text" inputmode="numeric" 
+         placeholder="Ingresá ID o pega URL" 
+         style="display:none; width:180px; padding:6px 8px; font-weight:600" />
+
+  <button id="openBtn" class="btn" style="display:none; padding:6px 10px;">Abrir</button>
+  <button id="clearBtn" class="btn btn-ghost" style="display:none; padding:6px 10px;">Limpiar</button>
+  <button id="scanBtn" class="btn btn-ghost" style="padding:6px 10px;">Escanear</button>
+</div>
     </header>
 
     <div class="grid">
@@ -562,9 +587,141 @@
         statusEl.innerHTML = `<span class="error">${e?.message || 'Error inesperado'}</span>`;
       }
     }
+    // —— Utils para ID / URL —— //
+function extractId(raw){
+  if(!raw) return '';
+  const s = String(raw).trim();
+  try{
+    // si es URL, intento leer ?id=
+    const u = new URL(s);
+    const qid = u.searchParams.get('id');
+    if(qid) return qid.trim();
+    // si tiene forma .../XYZ al final y parece ID, tomo el último segmento
+    const segs = u.pathname.split('/').filter(Boolean);
+    if(segs.length) return segs[segs.length-1];
+  }catch{ /* no es URL */ }
+  return s;
+}
+function gotoId(id){
+  const clean = extractId(id);
+  if(!clean){ return; }
+  const url = new URL(location.href);
+  url.searchParams.set('id', clean);
+  // navegamos para recargar datos de esa bobina
+  location.href = url.toString();
+}
+
+// —— UI del badge editable —— //
+(function setupEditableBadge(){
+  const badge = document.getElementById('badge');
+  const spanVal = document.getElementById('badgeValue');
+  const input = document.getElementById('idInput');
+  const openBtn = document.getElementById('openBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const scanBtn = document.getElementById('scanBtn');
+
+  const currentId = (new URL(location.href)).searchParams.get('id') || '—';
+  spanVal.textContent = currentId;
+
+  function enterEdit(){
+    spanVal.style.display = 'none';
+    input.style.display = 'inline-block';
+    openBtn.style.display = 'inline-block';
+    clearBtn.style.display = 'inline-block';
+    input.value = (currentId !== '—') ? currentId : '';
+    input.focus(); input.select();
+  }
+  function exitEdit(){
+    spanVal.style.display = 'inline';
+    input.style.display = 'none';
+    openBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+
+  spanVal.addEventListener('click', enterEdit);
+  clearBtn.addEventListener('click', ()=>{ input.value=''; input.focus(); });
+  openBtn.addEventListener('click', ()=> gotoId(input.value));
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ gotoId(input.value); }
+    if(e.key === 'Escape'){ exitEdit(); }
+  });
+  input.addEventListener('paste', (e)=>{
+    setTimeout(()=>{ input.value = extractId(input.value); }, 0);
+  });
+
+  // ocultar botón escanear si no hay soporte
+  if(!('BarcodeDetector' in window)){ scanBtn.style.display='none'; }
+})();
+  
+// —— Escaneo con cámara (BarcodeDetector) —— //
+(function setupScanner(){
+  if(!('BarcodeDetector' in window)) return;
+
+  const overlay = document.getElementById('scanOverlay');
+  const video = document.getElementById('scanVideo');
+  const status = document.getElementById('scanStatus');
+  const open = document.getElementById('scanBtn');
+  const close = document.getElementById('closeScanBtn');
+
+  let stream = null;
+  let running = false;
+  const detector = new BarcodeDetector({ formats: ['qr_code','code_128','code_39','code_93','ean_13'] });
+
+  async function start(){
+    try{
+      overlay.style.display='flex';
+      status.textContent = 'Inicializando cámara…';
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
+      video.srcObject = stream;
+      running = true;
+      tick();
+    }catch(err){
+      status.innerHTML = `<span class="error">No se pudo abrir la cámara</span>`;
+    }
+  }
+  function stop(){
+    running = false;
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    overlay.style.display='none';
+  }
+
+  async function tick(){
+    if(!running) return;
+    try{
+      const codes = await detector.detect(video);
+      if(codes && codes.length){
+        const raw = (codes[0].rawValue || '').trim();
+        if(raw){
+          stop();
+          gotoId(raw);
+          return;
+        }
+      }
+    }catch(_){ /* ignorar detección fallida y continuar */ }
+    requestAnimationFrame(tick);
+  }
+
+  open.addEventListener('click', start);
+  close.addEventListener('click', stop);
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) stop(); });
+})();
+
 
     main();
   </script>
+  <div id="scanOverlay" class="scan-overlay" aria-hidden="true">
+  <div class="scan-card">
+    <div class="scan-toolbar">
+      <strong>Escanear código (QR / Code128)</strong>
+      <div style="display:flex; gap:8px">
+        <button id="closeScanBtn" class="btn btn-ghost">Cancelar</button>
+      </div>
+    </div>
+    <video id="scanVideo" class="scan-video" autoplay playsinline></video>
+    <div id="scanStatus" class="muted" style="margin-top:6px">Buscando…</div>
+  </div>
+</div>
+
 </body>
 </html>
 
