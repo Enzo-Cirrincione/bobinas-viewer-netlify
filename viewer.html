@@ -175,8 +175,6 @@
   </style>
   <!-- Fallback QR decoder (client-side) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -673,11 +671,8 @@
     let scanStream = null;
     let scanRaf = 0;
     let barcodeDetector = null;
-    // Quagga state
-    let quaggaRunning = false;
-    let quaggaStartedHere = false;
 
-    async async function openScanModal(){
+    async function openScanModal(){
       const modal = document.getElementById('scanModal');
       const video = document.getElementById('scanVideo');
       const hint  = document.getElementById('scanHint');
@@ -688,73 +683,52 @@
       modal.setAttribute('aria-hidden','false');
 
       try{
-        // Detectar soporte real de code_128
-        let supportsCode128 = false;
-        if ('BarcodeDetector' in window) {
-          try {
-            const fmts = (await BarcodeDetector.getSupportedFormats?.()) || [];
-            supportsCode128 = fmts.includes('code_128');
-          } catch {}
-          try {
+        // BarcodeDetector si está disponible (primero intenta QR+Code128, si falla usa QR solo)
+        if('BarcodeDetector' in window){
+          try{
             barcodeDetector = new BarcodeDetector({ formats: ['qr_code','code_128'] });
-          } catch {
-            try { barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }
-            catch { barcodeDetector = null; }
+          }catch{
+            try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }catch{ barcodeDetector = null; }
           }
-        } else {
+        }else{
           barcodeDetector = null;
         }
 
-        // Cámara (usada por detector nativo y por jsQR)
+        // Cámara
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
-        // Selección de ruta y mensaje
+        // Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
-        const willUseQuagga = !supportsCode128; // si el nativo no soporta code_128, usamos Quagga
-        if (barcodeDetector && supportsCode128) {
-          hint.textContent = 'Leyendo QR y Code 128 con detector nativo…';
-        } else if (barcodeDetector && !supportsCode128) {
-          hint.textContent = 'Nativo con QR; Code 128 con modo compatible…';
-        } else if (useJsQR) {
-          hint.textContent = 'Sin detector nativo: QR con fallback y Code 128 con modo compatible…';
-        } else {
-          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR requiere jsQR)';
+        if(!barcodeDetector && !useJsQR){
+          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
         }
 
-        // Iniciar Quagga si hace falta para Code 128
-        if (willUseQuagga && window.Quagga && !quaggaRunning) {
-          video.style.display = 'none'; // Quagga maneja su propio video
-          await startQuaggaForCode128();
-          quaggaStartedHere = true;
-        } else {
-          video.style.display = '';
-        }
-
-        // Bucle de lectura (BarcodeDetector / jsQR)
         const loop = async () => {
-          try {
-            if (barcodeDetector) {
+          try{
+            if(barcodeDetector){
               const codes = await barcodeDetector.detect(video);
-              if (codes && codes.length) {
+              if(codes && codes.length){
                 const raw = (codes[0].rawValue||'').trim();
                 const id = extractIdFromAny(raw);
-                if (id) { await closeScanModal(); gotoId(id); return; }
+                if(id){ await closeScanModal(); gotoId(id); return; }
               }
-            } else if (useJsQR) {
+            }else if(useJsQR){
               const vw = video.videoWidth, vh = video.videoHeight;
-              if (vw && vh) {
+              if(vw && vh){
                 canvas.width = vw; canvas.height = vh;
                 ctx.drawImage(video, 0, 0, vw, vh);
                 const img = ctx.getImageData(0,0,vw,vh);
                 const qr = window.jsQR && window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
-                if (qr && qr.data) {
+                if(qr && qr.data){
                   const id = extractIdFromAny(qr.data);
-                  if (id) { await closeScanModal(); gotoId(id); return; }
+                  if(id){ await closeScanModal(); gotoId(id); return; }
                 }
               }
             }
-          } catch (e) { /* continuar */ }
+          }catch(e){
+            // ignoramos, seguimos intentando
+          }
           scanRaf = requestAnimationFrame(loop);
         };
         scanRaf = requestAnimationFrame(loop);
@@ -769,16 +743,18 @@
       modal.addEventListener('click', (e)=>{ if(e.target === modal) closeScanModal(); });
     }
 
-    async async function closeScanModal(){
+    async function closeScanModal(){
       const modal = document.getElementById('scanModal');
       const video = document.getElementById('scanVideo');
       modal.style.display = 'none';
       modal.setAttribute('aria-hidden','true');
-      if (scanRaf) cancelAnimationFrame(scanRaf);
+      if(scanRaf) cancelAnimationFrame(scanRaf);
       scanRaf = 0;
-      if (video) { try{ video.pause(); }catch{} video.style.display=''; video.srcObject = null; }
-      if (scanStream) { try{ scanStream.getTracks().forEach(t=>t.stop()); }catch{} scanStream = null; }
-      await stopQuaggaIfNeeded();
+      if(video) video.pause && video.pause();
+      if(scanStream){
+        scanStream.getTracks().forEach(t=>t.stop());
+        scanStream = null;
+      }
     }
 
     // Go
