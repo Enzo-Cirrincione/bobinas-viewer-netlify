@@ -173,8 +173,11 @@
     .scan-hint{ margin-top:8px; font-size:14px; color:var(--muted) }
     .modal footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
   </style>
-  <!-- Fallback QR decoder (client-side) -->
+
+  <!-- QR (jsQR) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
+  <!-- 1D/QR fallback (ZXing) -->
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js" defer></script>
 </head>
 <body>
   <div class="wrap">
@@ -671,91 +674,121 @@
     let scanStream = null;
     let scanRaf = 0;
     let barcodeDetector = null;
+    let zxingReader = null;
+    let zxingRunning = false;
 
     async function openScanModal(){
-      const modal = document.getElementById('scanModal');
-      const video = document.getElementById('scanVideo');
-      const hint  = document.getElementById('scanHint');
-      const canvas= document.getElementById('scanCanvas');
-      const ctx   = canvas.getContext('2d', { willReadFrequently:true });
+  const modal  = document.getElementById('scanModal');
+  const video  = document.getElementById('scanVideo');
+  const hint   = document.getElementById('scanHint');
+  const canvas = document.getElementById('scanCanvas');
+  const ctx    = canvas.getContext('2d', { willReadFrequently:true });
 
-      modal.style.display = 'flex';
-      modal.setAttribute('aria-hidden','false');
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden','false');
 
+  try{
+    // 1) Detector nativo si existe (intentamos incluir code_128)
+    if('BarcodeDetector' in window){
       try{
-        // BarcodeDetector si está disponible (primero intenta QR+Code128, si falla usa QR solo)
-        if('BarcodeDetector' in window){
-          try{
-            barcodeDetector = new BarcodeDetector({ formats: ['qr_code','code_128'] });
-          }catch{
-            try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }catch{ barcodeDetector = null; }
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code','code_128'] });
+      }catch{
+        try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }
+        catch{ barcodeDetector = null; }
+      }
+    }else{
+      barcodeDetector = null;
+    }
+
+    // 2) Cámara
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }, audio: false
+    });
+    video.srcObject = scanStream;
+
+    // 3) Bucle nativo + jsQR; si no hay resultados, caemos a ZXing (1D)
+    let startZxingTimeout = null;
+    const enableZxing = () => {
+      if (zxingRunning || !window.ZXingBrowser) return;
+      zxingReader = new window.ZXingBrowser.BrowserMultiFormatReader();
+      zxingRunning = true;
+      hint.textContent = 'Leyendo con ZXing (Code128/1D + QR)…';
+      zxingReader.decodeFromVideoDevice(null, video, (result, err) => {
+        if (result && result.getText) {
+          const raw = result.getText().trim();
+          const id = extractIdFromAny(raw);
+          if (id) { closeScanModal().then(()=> gotoId(id)); }
+        }
+        // ZXing sigue intentando solo.
+      });
+    };
+
+    const useJsQR = typeof window.jsQR === 'function';
+    if (!barcodeDetector) {
+      // si no hay detector nativo, activamos ZXing al toque (para 1D)
+      enableZxing();
+      if (!useJsQR) hint.textContent = 'Leyendo con ZXing…';
+    }
+
+    const loop = async () => {
+      try{
+        if (barcodeDetector) {
+          const codes = await barcodeDetector.detect(video);
+          if (codes && codes.length){
+            const raw = (codes[0].rawValue||'').trim();
+            const id = extractIdFromAny(raw);
+            if (id){ await closeScanModal(); gotoId(id); return; }
           }
-        }else{
-          barcodeDetector = null;
-        }
-
-        // Cámara
-        scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        video.srcObject = scanStream;
-
-        // Bucle de lectura
-        const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
-        if(!barcodeDetector && !useJsQR){
-          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
-        }
-
-        const loop = async () => {
-          try{
-            if(barcodeDetector){
-              const codes = await barcodeDetector.detect(video);
-              if(codes && codes.length){
-                const raw = (codes[0].rawValue||'').trim();
-                const id = extractIdFromAny(raw);
-                if(id){ await closeScanModal(); gotoId(id); return; }
-              }
-            }else if(useJsQR){
-              const vw = video.videoWidth, vh = video.videoHeight;
-              if(vw && vh){
-                canvas.width = vw; canvas.height = vh;
-                ctx.drawImage(video, 0, 0, vw, vh);
-                const img = ctx.getImageData(0,0,vw,vh);
-                const qr = window.jsQR && window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
-                if(qr && qr.data){
-                  const id = extractIdFromAny(qr.data);
-                  if(id){ await closeScanModal(); gotoId(id); return; }
-                }
-              }
+          // si tras ~1.2s no hay lectura con nativo, activamos ZXing como refuerzo
+          if (!zxingRunning && !startZxingTimeout) {
+            startZxingTimeout = setTimeout(enableZxing, 1200);
+            hint.textContent = 'Intentando nativo… (activando ZXing si no hay lectura)';
+          }
+        } else if (useJsQR) {
+          // Fallback QR puro con jsQR
+          const vw = video.videoWidth, vh = video.videoHeight;
+          if(vw && vh){
+            canvas.width = vw; canvas.height = vh;
+            ctx.drawImage(video, 0, 0, vw, vh);
+            const img = ctx.getImageData(0,0,vw,vh);
+            const qr = window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
+            if(qr && qr.data){
+              const id = extractIdFromAny(qr.data);
+              if(id){ await closeScanModal(); gotoId(id); return; }
             }
-          }catch(e){
-            // ignoramos, seguimos intentando
           }
-          scanRaf = requestAnimationFrame(loop);
-        };
-        scanRaf = requestAnimationFrame(loop);
+        }
+      }catch(e){ /* seguir */ }
+      scanRaf = requestAnimationFrame(loop);
+    };
+    scanRaf = requestAnimationFrame(loop);
 
-      }catch(err){
-        hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
-      }
+  }catch(err){
+    hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
+  }
 
-      // acciones cierre
-      document.getElementById('scanStopBtn').onclick = closeScanModal;
-      document.getElementById('closeScanBtn').onclick = closeScanModal;
-      modal.addEventListener('click', (e)=>{ if(e.target === modal) closeScanModal(); });
-    }
+  document.getElementById('scanStopBtn').onclick = closeScanModal;
+  document.getElementById('closeScanBtn').onclick = closeScanModal;
+  document.getElementById('scanModal').addEventListener('click', (e)=>{
+    if(e.target === document.getElementById('scanModal')) closeScanModal();
+  });
+}
 
-    async function closeScanModal(){
-      const modal = document.getElementById('scanModal');
-      const video = document.getElementById('scanVideo');
-      modal.style.display = 'none';
-      modal.setAttribute('aria-hidden','true');
-      if(scanRaf) cancelAnimationFrame(scanRaf);
-      scanRaf = 0;
-      if(video) video.pause && video.pause();
-      if(scanStream){
-        scanStream.getTracks().forEach(t=>t.stop());
-        scanStream = null;
-      }
-    }
+
+   async function closeScanModal(){
+  const modal = document.getElementById('scanModal');
+  const video = document.getElementById('scanVideo');
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden','true');
+
+  if(scanRaf) cancelAnimationFrame(scanRaf);
+  scanRaf = 0;
+  if(video) video.pause && video.pause();
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream = null; }
+  if(zxingReader){ try{ zxingReader.reset(); }catch{} zxingReader = null; }
+  zxingRunning = false;
+}
+
 
     // Go
     main();
