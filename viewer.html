@@ -173,11 +173,10 @@
     .scan-hint{ margin-top:8px; font-size:14px; color:var(--muted) }
     .modal footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
   </style>
-
-  <!-- QR (jsQR) -->
+  <!-- Fallback QR decoder (client-side) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
-  <!-- 1D/QR fallback (ZXing) -->
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js" defer></script>
+  <!-- 🚀 NUEVO: Fallback Code128 con Quagga2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@2.2.1/dist/quagga.js" defer></script>
 </head>
 <body>
   <div class="wrap">
@@ -472,7 +471,7 @@
         let data; try { data = JSON.parse(txt); } catch { data = { error:'parse_error', raw:txt }; }
 
         if (!r.ok || data.error) {
-          statusEl.innerHTML = `<span class="error">Error: ${data.message || data.error || r.status}</span>`;
+          statusEl.innerHTML = `<span class="error">Error: ${data.message || ${'data.error'} || r.status}</span>`;
           return;
         }
 
@@ -670,131 +669,183 @@
       scanBtn.addEventListener('click', openScanModal);
     })();
 
-    // ====== Escáner (BarcodeDetector + fallback jsQR) ======
+    // ====== Escáner (BarcodeDetector + jsQR + Quagga2 Code128) ======
     let scanStream = null;
     let scanRaf = 0;
     let barcodeDetector = null;
-    let zxingReader = null;
-    let zxingRunning = false;
+    let quaggaRunning = false;
+
+    async function supportsFormat(fmt){
+      if(!('BarcodeDetector' in window)) return false;
+      try{
+        if(typeof BarcodeDetector.getSupportedFormats === 'function'){
+          const fmts = await BarcodeDetector.getSupportedFormats();
+          return fmts.includes(fmt);
+        }
+        // si no hay lista, probamos construirlo
+        new BarcodeDetector({ formats: [fmt] });
+        return true;
+      }catch{ return false; }
+    }
 
     async function openScanModal(){
-  const modal  = document.getElementById('scanModal');
-  const video  = document.getElementById('scanVideo');
-  const hint   = document.getElementById('scanHint');
-  const canvas = document.getElementById('scanCanvas');
-  const ctx    = canvas.getContext('2d', { willReadFrequently:true });
+      const modal = document.getElementById('scanModal');
+      const video = document.getElementById('scanVideo');
+      const hint  = document.getElementById('scanHint');
+      const canvas= document.getElementById('scanCanvas');
+      const ctx   = canvas.getContext('2d', { willReadFrequently:true });
 
-  modal.style.display = 'flex';
-  modal.setAttribute('aria-hidden','false');
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden','false');
 
-  try{
-    // 1) Detector nativo si existe (intentamos incluir code_128)
-    if('BarcodeDetector' in window){
       try{
-        barcodeDetector = new BarcodeDetector({ formats: ['qr_code','code_128'] });
-      }catch{
-        try{ barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); }
-        catch{ barcodeDetector = null; }
-      }
-    }else{
-      barcodeDetector = null;
-    }
+        // Cámara
+        scanStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        video.srcObject = scanStream;
 
-    // 2) Cámara
-    scanStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }, audio: false
-    });
-    video.srcObject = scanStream;
-
-    // 3) Bucle nativo + jsQR; si no hay resultados, caemos a ZXing (1D)
-    let startZxingTimeout = null;
-    const enableZxing = () => {
-      if (zxingRunning || !window.ZXingBrowser) return;
-      zxingReader = new window.ZXingBrowser.BrowserMultiFormatReader();
-      zxingRunning = true;
-      hint.textContent = 'Leyendo con ZXing (Code128/1D + QR)…';
-      zxingReader.decodeFromVideoDevice(null, video, (result, err) => {
-        if (result && result.getText) {
-          const raw = result.getText().trim();
-          const id = extractIdFromAny(raw);
-          if (id) { closeScanModal().then(()=> gotoId(id)); }
+        // Soportes nativos
+        const hasQR = await supportsFormat('qr_code');
+        const hasC128 = await supportsFormat('code_128');
+        if(hasQR || hasC128){
+          try{
+            barcodeDetector = new BarcodeDetector({ formats: [ ...(hasQR?['qr_code']:[]), ...(hasC128?['code_128']:[]) ] });
+          }catch{ barcodeDetector = null; }
+        }else{
+          barcodeDetector = null;
         }
-        // ZXing sigue intentando solo.
-      });
-    };
 
-    const useJsQR = typeof window.jsQR === 'function';
-    if (!barcodeDetector) {
-      // si no hay detector nativo, activamos ZXing al toque (para 1D)
-      enableZxing();
-      if (!useJsQR) hint.textContent = 'Leyendo con ZXing…';
-    }
+        // Si NO hay Code128 nativo, arrancamos Quagga2 (solo Code128)
+        if(!hasC128 && window.Quagga){
+          startQuagga(video, (val)=>{
+            const id = extractIdFromAny(val);
+            if(id){ closeScanModal().then(()=> gotoId(id)); }
+          });
+          hint.innerHTML = 'Escaneo activo (Quagga2 para Code128, y QR con fallback).';
+        }else{
+          hint.innerHTML = 'Escaneo activo (nativo QR/Code128; QR fallback si hace falta).';
+        }
 
-    const loop = async () => {
-      try{
-        if (barcodeDetector) {
-          const codes = await barcodeDetector.detect(video);
-          if (codes && codes.length){
-            const raw = (codes[0].rawValue||'').trim();
-            const id = extractIdFromAny(raw);
-            if (id){ await closeScanModal(); gotoId(id); return; }
-          }
-          // si tras ~1.2s no hay lectura con nativo, activamos ZXing como refuerzo
-          if (!zxingRunning && !startZxingTimeout) {
-            startZxingTimeout = setTimeout(enableZxing, 1200);
-            hint.textContent = 'Intentando nativo… (activando ZXing si no hay lectura)';
-          }
-        } else if (useJsQR) {
-          // Fallback QR puro con jsQR
-          const vw = video.videoWidth, vh = video.videoHeight;
-          if(vw && vh){
-            canvas.width = vw; canvas.height = vh;
-            ctx.drawImage(video, 0, 0, vw, vh);
-            const img = ctx.getImageData(0,0,vw,vh);
-            const qr = window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
-            if(qr && qr.data){
-              const id = extractIdFromAny(qr.data);
-              if(id){ await closeScanModal(); gotoId(id); return; }
+        // Bucle para nativo + jsQR (QR)
+        const useJsQR = typeof window.jsQR === 'function';
+        const loop = async () => {
+          try{
+            if(barcodeDetector){
+              const codes = await barcodeDetector.detect(video);
+              if(codes && codes.length){
+                // priorizamos QR si viene URL completa
+                const first = codes[0];
+                const raw = (first.rawValue||'').trim();
+                const id = extractIdFromAny(raw);
+                if(id){ await closeScanModal(); gotoId(id); return; }
+              }
             }
+            // Fallback QR (si Quagga ya corre, igual dejamos QR por si aparece)
+            if(useJsQR){
+              const vw = video.videoWidth, vh = video.videoHeight;
+              if(vw && vh){
+                canvas.width = vw; canvas.height = vh;
+                ctx.drawImage(video, 0, 0, vw, vh);
+                const img = ctx.getImageData(0,0,vw,vh);
+                const qr = window.jsQR && window.jsQR(img.data, vw, vh, { inversionAttempts:'attemptBoth' });
+                if(qr && qr.data){
+                  const id = extractIdFromAny(qr.data);
+                  if(id){ await closeScanModal(); gotoId(id); return; }
+                }
+              }
+            }
+          }catch(e){ /* continuar */ }
+          scanRaf = requestAnimationFrame(loop);
+        };
+        scanRaf = requestAnimationFrame(loop);
+
+      }catch(err){
+        hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
+      }
+
+      // acciones cierre
+      document.getElementById('scanStopBtn').onclick = closeScanModal;
+      document.getElementById('closeScanBtn').onclick = closeScanModal;
+      modal.addEventListener('click', (e)=>{ if(e.target === modal) closeScanModal(); });
+    }
+
+    // Inicia Quagga para Code128
+    function startQuagga(videoEl, onDetected){
+      if(!window.Quagga || quaggaRunning) return;
+      try{
+        window.Quagga.init({
+          inputStream: {
+            type: "LiveStream",
+            target: videoEl,
+            constraints: {
+              facingMode: "environment",
+              // resolución moderada para rendimiento
+              width: { ideal: 1280 },
+              height:{ ideal: 720 }
+            }
+          },
+          locator: {
+            halfSample: true,
+            patchSize: "medium"   // x-small | small | medium | large | x-large
+          },
+          numOfWorkers: navigator.hardwareConcurrency ? Math.max(1, Math.min(4, navigator.hardwareConcurrency-1)) : 2,
+          frequency: 8,
+          decoder: {
+            readers: ["code_128_reader"]
           }
+        }, (err) => {
+          if (err) {
+            // si falla init, no rompemos nada
+            return;
+          }
+          window.Quagga.start();
+          quaggaRunning = true;
+
+          window.Quagga.offDetected(); // evitar handlers duplicados
+          window.Quagga.onDetected((res)=>{
+            const code = res && res.codeResult && res.codeResult.code;
+            if(code){
+              onDetected(code);
+            }
+          });
+        });
+      }catch(e){
+        // silencioso: seguimos con lo que haya
+      }
+    }
+
+    function stopQuagga(){
+      try{
+        if(window.Quagga && quaggaRunning){
+          window.Quagga.stop();
+          quaggaRunning = false;
         }
-      }catch(e){ /* seguir */ }
-      scanRaf = requestAnimationFrame(loop);
-    };
-    scanRaf = requestAnimationFrame(loop);
+      }catch{}
+    }
 
-  }catch(err){
-    hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o usá "Pegar".';
-  }
-
-  document.getElementById('scanStopBtn').onclick = closeScanModal;
-  document.getElementById('closeScanBtn').onclick = closeScanModal;
-  document.getElementById('scanModal').addEventListener('click', (e)=>{
-    if(e.target === document.getElementById('scanModal')) closeScanModal();
-  });
-}
-
-
-   async function closeScanModal(){
-  const modal = document.getElementById('scanModal');
-  const video = document.getElementById('scanVideo');
-  modal.style.display = 'none';
-  modal.setAttribute('aria-hidden','true');
-
-  if(scanRaf) cancelAnimationFrame(scanRaf);
-  scanRaf = 0;
-  if(video) video.pause && video.pause();
-  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream = null; }
-  if(zxingReader){ try{ zxingReader.reset(); }catch{} zxingReader = null; }
-  zxingRunning = false;
-}
-
+    async function closeScanModal(){
+      const modal = document.getElementById('scanModal');
+      const video = document.getElementById('scanVideo');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden','true');
+      if(scanRaf) cancelAnimationFrame(scanRaf);
+      scanRaf = 0;
+      stopQuagga();
+      if(video) video.pause && video.pause();
+      if(scanStream){
+        scanStream.getTracks().forEach(t=>t.stop());
+        scanStream = null;
+      }
+    }
 
     // Go
     main();
   </script>
 </body>
 </html>
+
 
 
 
