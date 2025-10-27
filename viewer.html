@@ -172,6 +172,8 @@
     video{ width:100%; height:auto; display:block; }
     .scan-hint{ margin-top:8px; font-size:14px; color:var(--muted) }
     .modal footer{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
+    .scan-guide{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+      height: 33%; outline: 2px dashed rgba(255,255,255,.5); pointer-events:none; }
   </style>
   <!-- Fallback QR decoder (client-side) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
@@ -265,7 +267,9 @@
       <footer>
         <button id="scanStopBtn" class="btn btn-ghost">Detener</button>
       </footer>
-    
+    </div>
+  </div>
+
   <!-- Modal escáner 1D (foto) -->
   <div id="scan1DModal" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scan1DTitle">
@@ -275,19 +279,17 @@
       </header>
       <div class="video-wrap">
         <video id="scan1DVideo" autoplay playsinline></video>
+        <div class="scan-guide" aria-hidden="true"></div>
         <canvas id="scan1DCanvas" style="display:none"></canvas>
         <canvas id="scan1DCrop" style="display:none"></canvas>
         <img id="scan1DStill" style="display:none; width:100%; height:auto;" alt="Captura"/>
       </div>
       <div id="scan1DHint" class="scan-hint">Enfocá el código, mantené estable y tocá “Tomar foto”.</div>
       <footer>
-        <button id="takePhoto1DBtn" class="btn">Tomar foto</button>
+        <button id="takePhoto1DBtn" class="btn" disabled>Tomar foto</button>
         <button id="retry1DBtn" class="btn btn-ghost" style="display:none">Reintentar</button>
       </footer>
     </div>
-  </div>
-
-</div>
   </div>
 
   <script>
@@ -661,6 +663,7 @@
     }
 
     // ====== Header: buscar / pegar / escanear ======
+    document.addEventListener('DOMContentLoaded', function(){
     (function initHeaderSearch(){
       const idInput = document.getElementById('idInput');
       const goBtn   = document.getElementById('goBtn');
@@ -694,6 +697,7 @@
       if (scanQrBtn) scanQrBtn.addEventListener('click', openScanModal);
       if (scan1DBtn) scan1DBtn.addEventListener('click', openScan1DModal);
     })();
+  }, { once: true });
 
     // ====== Escáner (BarcodeDetector + fallback jsQR) ======
 // (QR) — existe código debajo que NO tocamos
@@ -713,11 +717,14 @@ async function openScan1DModal(){
   modal.setAttribute('aria-hidden','false');
 
   // Estado UI
-  hint.textContent = 'Enfocá el código, mantené estable y tocá “Tomar foto”.';
+  hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
   try{
-    scan1DStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    scan1DStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, aspectRatio: { ideal: 4/3 } }, audio: false });
     video.srcObject = scan1DStream;
+    try { await video.play(); } catch(e) {}
+    await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
+    document.getElementById('takePhoto1DBtn').disabled = false;
   }catch(e){
     hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o pegá el ID manualmente.';
   }
@@ -732,7 +739,7 @@ async function openScan1DModal(){
 function reset1DView(){
   const hint  = document.getElementById('scan1DHint');
   const still = document.getElementById('scan1DStill');
-  hint.textContent = 'Enfocá el código, mantené estable y tocá “Tomar foto”.';
+  hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
   document.getElementById('retry1DBtn').style.display = 'none';
   document.getElementById('takePhoto1DBtn').disabled = false;
@@ -783,19 +790,47 @@ async function takePhoto1D(){
     still.src = full.toDataURL('image/jpeg', 0.92);
     still.style.display = 'block';
 
-    // Recorte horizontal central (25% del alto)
-    const bandH = Math.round(th * 0.25);
-    const sy = Math.round((th - bandH)/2);
-    const sx = 0, sw = tw, sh = bandH;
+    // Recortes (33% de alto)
+    const bandH = Math.round(th * 0.33);
+    const sx = 0, sw = tw;
+    const syC = Math.round((th - bandH)/2);
+    const syT = 0;
+    const syB = th - bandH;
 
-    crop.width = sw; crop.height = sh;
+    crop.width = sw; crop.height = bandH;
     const cctx = crop.getContext('2d', { willReadFrequently: true });
-    cctx.drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
+    // Central
+    cctx.clearRect(0,0,sw,bandH);
+    cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
 
     hint.textContent = 'Buscando código de barras…';
     document.getElementById('takePhoto1DBtn').disabled = true;
 
-    const ok = await decodeCode128FromCanvas(crop) || await decodeCode128FromCanvas(full) || await decodeCode128FromCanvas(rotatedCanvas(crop));
+    let ok = false;
+    // 1) Full
+    ok = ok || await decodeCode128FromCanvas(full);
+    // 2) Central 33%
+    ok = ok || await decodeCode128FromCanvas(crop);
+    // 3) Full rotado 90°
+    ok = ok || await decodeCode128FromCanvas(rotatedCanvas(full));
+    // 4) Banda superior 33%
+    if(!ok){
+      cctx.clearRect(0,0,sw,bandH);
+      cctx.drawImage(full, sx, syT, sw, bandH, 0, 0, sw, bandH);
+      ok = ok || await decodeCode128FromCanvas(crop);
+    }
+    // 5) Banda inferior 33%
+    if(!ok){
+      cctx.clearRect(0,0,sw,bandH);
+      cctx.drawImage(full, sx, syB, sw, bandH, 0, 0, sw, bandH);
+      ok = ok || await decodeCode128FromCanvas(crop);
+    }
+    // 6) Banda central rotada
+    if(!ok){
+      cctx.clearRect(0,0,sw,bandH);
+      cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
+      ok = ok || await decodeCode128FromCanvas(rotatedCanvas(crop));
+    }
     if(!ok){
       hint.innerHTML = 'No se encontró un Code 128 en la foto. Probá acercarte, alinear mejor o reintentar.';
       retry.style.display = 'inline-block';
@@ -957,7 +992,6 @@ async function closeScan1DModal(){
   </script>
 </body>
 </html>
-
 
 
 
