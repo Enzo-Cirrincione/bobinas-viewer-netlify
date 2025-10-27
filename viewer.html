@@ -175,9 +175,9 @@
     .scan-guide{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
       height: 33%; outline: 2px dashed rgba(255,255,255,.5); pointer-events:none; }
 
-    /* Ajuste: video y foto ocupan exactamente el mismo lienzo (solo en modal 1D) */
-    #scan1DModal .video-wrap video,
-    #scan1DModal .video-wrap img#scan1DStill{
+    /* Ajuste: video y foto ocupan exactamente el mismo lienzo */
+    .video-wrap video,
+    .video-wrap img#scan1DStill{
       position: absolute;
       inset: 0;
       width: 100%;
@@ -711,8 +711,9 @@
   }, { once: true });
 
     // ====== Escáner (BarcodeDetector + fallback jsQR) ======
-    // (QR) — existe código debajo que NO tocamos
-    // (1D Code128 por foto) — variables separadas
+// (QR) — existe código debajo que NO tocamos
+
+// (1D Code128 por foto) — variables separadas
 let scan1DStream = null;
 let decoding1D = false;
 
@@ -729,7 +730,7 @@ async function openScan1DModal(){
   // Estado UI
   hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
-  video.style.display = '';
+  video.style.display = 'block';;
   const guide = document.querySelector('#scan1DModal .scan-guide');
   if (guide) guide.style.display = '';
 
@@ -765,7 +766,7 @@ function reset1DView(){
 
   hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
-  video.style.display = '';
+  video.style.display = 'block';;
   if (guide) guide.style.display = '';
 
   document.getElementById('retry1DBtn').style.display = 'none';
@@ -968,11 +969,6 @@ async function closeScan1DModal(){
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
-        // 🔧 Asegurar que el video se vea y arranque
-        video.style.display = '';
-        try { await video.play(); } catch {}
-        await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
-
         // Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
         if(!barcodeDetector && !useJsQR){
@@ -1025,7 +1021,7 @@ async function closeScan1DModal(){
       modal.setAttribute('aria-hidden','true');
       if(scanRaf) cancelAnimationFrame(scanRaf);
       scanRaf = 0;
-      if(video) { video.pause && video.pause(); video.style.display=''; }
+      if(video) video.pause && video.pause();
       if(scanStream){
         scanStream.getTracks().forEach(t=>t.stop());
         scanStream = null;
@@ -1037,6 +1033,7 @@ async function closeScan1DModal(){
   </script>
 </body>
 </html>
+
 
 
 
