@@ -176,8 +176,8 @@
       height: 33%; outline: 2px dashed rgba(255,255,255,.5); pointer-events:none; }
 
     /* Ajuste: video y foto ocupan exactamente el mismo lienzo */
-    .video-wrap video,
-    .video-wrap img#scan1DStill{
+    #scan1DModal .video-wrap video,
+    #scan1DModal .video-wrap img#scan1DStill{
       position: absolute;
       inset: 0;
       width: 100%;
@@ -968,6 +968,10 @@ async function closeScan1DModal(){
         // Cámara
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
+
+        video.style.display = 'block';
+        try { await video.play(); } catch {}
+        await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
 
         // Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
