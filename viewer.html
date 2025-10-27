@@ -175,7 +175,8 @@
   </style>
   <!-- Fallback QR decoder (client-side) -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
-  <!-- Quagga2 (Code 128 1D) -->
+  
+  <!-- Quagga2 (Code 128 imagen única) -->
   <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js" defer></script>
 </head>
 <body>
@@ -193,7 +194,8 @@
           <input id="idInput" class="id-input" placeholder="Escribí o pegá un ID o URL…" inputmode="text" />
           <button id="goBtn" class="btn">Buscar</button>
           <button id="pasteBtn" class="btn btn-ghost" title="Pegar desde portapapeles">Pegar</button>
-          <button id="scanBtn" class="btn btn-ghost" title="Escanear código">Escanear</button>
+          <button id="scanQrBtn" class="btn btn-ghost" title="Escanear QR">Escanear QR</button>
+          <button id="scan1DBtn" class="btn btn-ghost" title="Escanear Code 128">Escanear Code 128</button>
         </div>
       </div>
     </header>
@@ -263,7 +265,29 @@
       <footer>
         <button id="scanStopBtn" class="btn btn-ghost">Detener</button>
       </footer>
+    
+  <!-- Modal escáner 1D (foto) -->
+  <div id="scan1DModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scan1DTitle">
+      <header>
+        <h3 id="scan1DTitle" class="title" style="margin:0">Escanear Code 128</h3>
+        <button id="closeScan1DBtn" class="btn btn-ghost">Cerrar</button>
+      </header>
+      <div class="video-wrap">
+        <video id="scan1DVideo" autoplay playsinline></video>
+        <canvas id="scan1DCanvas" style="display:none"></canvas>
+        <canvas id="scan1DCrop" style="display:none"></canvas>
+        <img id="scan1DStill" style="display:none; width:100%; height:auto;" alt="Captura"/>
+      </div>
+      <div id="scan1DHint" class="scan-hint">Enfocá el código, mantené estable y tocá “Tomar foto”.</div>
+      <footer>
+        <button id="takePhoto1DBtn" class="btn">Tomar foto</button>
+        <button id="retry1DBtn" class="btn btn-ghost" style="display:none">Reintentar</button>
+      </footer>
     </div>
+  </div>
+
+</div>
   </div>
 
   <script>
@@ -641,7 +665,8 @@
       const idInput = document.getElementById('idInput');
       const goBtn   = document.getElementById('goBtn');
       const pasteBtn= document.getElementById('pasteBtn');
-      const scanBtn = document.getElementById('scanBtn');
+      const scanQrBtn = document.getElementById('scanQrBtn');
+      const scan1DBtn = document.getElementById('scan1DBtn');
 
       idInput.addEventListener('keydown', (e)=>{
         if(e.key==='Enter'){
@@ -666,16 +691,181 @@
         }
       });
 
-      scanBtn.addEventListener('click', openScanModal);
+      if (scanQrBtn) scanQrBtn.addEventListener('click', openScanModal);
+      if (scan1DBtn) scan1DBtn.addEventListener('click', openScan1DModal);
     })();
 
     // ====== Escáner (BarcodeDetector + fallback jsQR) ======
+// (QR) — existe código debajo que NO tocamos
+
+// (1D Code128 por foto) — variables separadas
+let scan1DStream = null;
+let decoding1D = false;
+
+// Abre modal 1D, inicia cámara solo para preview (no decodifica en vivo)
+async function openScan1DModal(){
+  const modal = document.getElementById('scan1DModal');
+  const video = document.getElementById('scan1DVideo');
+  const hint  = document.getElementById('scan1DHint');
+  const still = document.getElementById('scan1DStill');
+
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden','false');
+
+  // Estado UI
+  hint.textContent = 'Enfocá el código, mantené estable y tocá “Tomar foto”.';
+  still.style.display = 'none';
+  try{
+    scan1DStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = scan1DStream;
+  }catch(e){
+    hint.innerHTML = 'No se pudo acceder a la cámara. Verificá permisos o pegá el ID manualmente.';
+  }
+
+  // acciones
+  document.getElementById('takePhoto1DBtn').onclick = takePhoto1D;
+  document.getElementById('retry1DBtn').onclick = reset1DView;
+  document.getElementById('closeScan1DBtn').onclick = closeScan1DModal;
+  modal.addEventListener('click', (ev)=>{ if(ev.target===modal) closeScan1DModal(); });
+}
+
+function reset1DView(){
+  const hint  = document.getElementById('scan1DHint');
+  const still = document.getElementById('scan1DStill');
+  hint.textContent = 'Enfocá el código, mantené estable y tocá “Tomar foto”.';
+  still.style.display = 'none';
+  document.getElementById('retry1DBtn').style.display = 'none';
+  document.getElementById('takePhoto1DBtn').disabled = false;
+}
+
+// Saca foto, cierra cámara y decodifica la imagen (con recorte central + rotación de reintento)
+async function takePhoto1D(){
+  if(decoding1D) return;
+  decoding1D = true;
+  const video = document.getElementById('scan1DVideo');
+  const full  = document.getElementById('scan1DCanvas');
+  const crop  = document.getElementById('scan1DCrop');
+  const still = document.getElementById('scan1DStill');
+  const hint  = document.getElementById('scan1DHint');
+  const retry = document.getElementById('retry1DBtn');
+
+  try{
+    // Dimensiones del video
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if(!vw || !vh){ hint.textContent = 'No hay imagen de cámara disponible.'; decoding1D = false; return; }
+
+    // Limitar resolución para performance
+    const MAX_SIDE = 1280;
+    let tw = vw, th = vh;
+    if (Math.max(vw, vh) > MAX_SIDE) {
+      const scale = MAX_SIDE / Math.max(vw, vh);
+      tw = Math.round(vw*scale);
+      th = Math.round(vh*scale);
+    }
+
+    // Dibujar frame completo
+    full.width = tw; full.height = th;
+    const fctx = full.getContext('2d', { willReadFrequently: true });
+    fctx.drawImage(video, 0, 0, tw, th);
+
+    // Apagar cámara ya (evita conflictos en iOS)
+    try{ video.pause(); }catch{}
+    if(video.srcObject){
+      try{ video.srcObject.getTracks().forEach(t=>t.stop()); }catch{}
+      video.srcObject = null;
+    }
+    if(scan1DStream){
+      try{ scan1DStream.getTracks().forEach(t=>t.stop()); }catch{}
+      scan1DStream = null;
+    }
+
+    // Mostrar foto al usuario
+    still.src = full.toDataURL('image/jpeg', 0.92);
+    still.style.display = 'block';
+
+    // Recorte horizontal central (25% del alto)
+    const bandH = Math.round(th * 0.25);
+    const sy = Math.round((th - bandH)/2);
+    const sx = 0, sw = tw, sh = bandH;
+
+    crop.width = sw; crop.height = sh;
+    const cctx = crop.getContext('2d', { willReadFrequently: true });
+    cctx.drawImage(full, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    hint.textContent = 'Buscando código de barras…';
+    document.getElementById('takePhoto1DBtn').disabled = true;
+
+    const ok = await decodeCode128FromCanvas(crop) || await decodeCode128FromCanvas(full) || await decodeCode128FromCanvas(rotatedCanvas(crop));
+    if(!ok){
+      hint.innerHTML = 'No se encontró un Code 128 en la foto. Probá acercarte, alinear mejor o reintentar.';
+      retry.style.display = 'inline-block';
+      document.getElementById('takePhoto1DBtn').disabled = false;
+    }
+  }catch(e){
+    hint.innerHTML = 'Ocurrió un error al procesar la imagen.';
+    document.getElementById('takePhoto1DBtn').disabled = false;
+  }finally{
+    decoding1D = false;
+  }
+}
+
+function rotatedCanvas(srcCanvas){
+  const dst = document.createElement('canvas');
+  dst.width = srcCanvas.height;
+  dst.height = srcCanvas.width;
+  const dctx = dst.getContext('2d', { willReadFrequently: true });
+  dctx.save();
+  dctx.translate(dst.width/2, dst.height/2);
+  dctx.rotate(Math.PI/2);
+  dctx.drawImage(srcCanvas, -srcCanvas.width/2, -srcCanvas.height/2);
+  dctx.restore();
+  return dst;
+}
+
+function decodeCode128FromCanvas(cv){
+  return new Promise((resolve) => {
+    if(!window.Quagga || !cv) return resolve(false);
+    try{
+      const dataUrl = cv.toDataURL('image/png');
+      window.Quagga.decodeSingle({
+        src: dataUrl,
+        numOfWorkers: 0,
+        inputStream: { size: 800 },
+        locator: { patchSize: 'medium', halfSample: true },
+        decoder: { readers: ['code_128_reader'] }
+      }, (result) => {
+        try{
+          const raw = (result && result.codeResult && result.codeResult.code) ? String(result.codeResult.code).trim() : '';
+          if(raw){
+            const id = extractIdFromAny(raw);
+            if(id){ closeScan1DModal().then(()=>{ gotoId(id); }); return resolve(true); }
+          }
+          resolve(false);
+        }catch{ resolve(false); }
+      });
+    }catch{ resolve(false); }
+  });
+}
+
+async function closeScan1DModal(){
+  const modal = document.getElementById('scan1DModal');
+  const video = document.getElementById('scan1DVideo');
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden','true');
+  try{ video.pause && video.pause(); }catch{}
+  if(video && video.srcObject){
+    try{ video.srcObject.getTracks().forEach(t=>t.stop()); }catch{}
+    video.srcObject = null;
+  }
+  if(scan1DStream){
+    try{ scan1DStream.getTracks().forEach(t=>t.stop()); }catch{}
+    scan1DStream = null;
+  }
+}
+
     let scanStream = null;
     let scanRaf = 0;
     let barcodeDetector = null;
-    // Estado Quagga (Code128)
-    let quaggaRunning = false;
-    let quaggaStartedHere = false;
 
     async function openScanModal(){
       const modal = document.getElementById('scanModal');
@@ -688,15 +878,6 @@
       modal.setAttribute('aria-hidden','false');
 
       try{
-        // --- detectar soporte real de code_128 ---
-        let supportsCode128 = false;
-        if ('BarcodeDetector' in window && typeof BarcodeDetector.getSupportedFormats === 'function') {
-          try {
-            const fmts = await BarcodeDetector.getSupportedFormats();
-            supportsCode128 = Array.isArray(fmts) && fmts.includes('code_128');
-          } catch {}
-        }
-
         // BarcodeDetector si está disponible (primero intenta QR+Code128, si falla usa QR solo)
         if('BarcodeDetector' in window){
           try{
@@ -714,25 +895,8 @@
 
         // Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
-        const willUseQuagga = !supportsCode128;
-
-        if (barcodeDetector && supportsCode128) {
-          hint.textContent = 'Leyendo QR y Code 128 con detector nativo…';
-        } else if (barcodeDetector && !supportsCode128) {
-          hint.textContent = 'QR nativo; Code 128 en modo compatible…';
-        } else if (useJsQR) {
-          hint.textContent = 'Sin detector nativo: QR con fallback y Code 128 en modo compatible…';
-        } else {
-          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR requiere jsQR)';
-        }
-
-        // --- iniciar Quagga si hace falta para Code128 ---
-        if (willUseQuagga && window.Quagga && !quaggaRunning) {
-          video.style.display = 'none'; // Quagga usa su propio video
-          await startQuaggaForCode128();
-          quaggaStartedHere = true;
-        } else {
-          video.style.display = '';
+        if(!barcodeDetector && !useJsQR){
+          hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
         }
 
         const loop = async () => {
@@ -774,51 +938,6 @@
       modal.addEventListener('click', (e)=>{ if(e.target === modal) closeScanModal(); });
     }
 
-    // --- Helpers Quagga (Code128) ---
-    async function startQuaggaForCode128(){
-      return new Promise((resolve, reject) => {
-        try{
-          const target = document.querySelector('.video-wrap') || document.body;
-          window.Quagga.init({
-            inputStream: {
-              type: "LiveStream",
-              target,
-              constraints: { facingMode: "environment" }
-            },
-            locator: { patchSize: "medium", halfSample: true },
-            numOfWorkers: Math.max(1, (navigator.hardwareConcurrency||4) - 1),
-            frequency: 8,
-            decoder: { readers: ["code_128_reader"] }
-          }, (err) => {
-            if (err) { reject(err); return; }
-            window.Quagga.start();
-            quaggaRunning = true;
-            window.Quagga.onDetected(onQuaggaDetected);
-            resolve();
-          });
-        }catch(e){ reject(e); }
-      });
-    }
-
-    async function stopQuaggaIfNeeded(){
-      if (quaggaRunning && window.Quagga) {
-        try{
-          window.Quagga.offDetected(onQuaggaDetected);
-          window.Quagga.stop();
-        }catch{}
-        quaggaRunning = false;
-      }
-    }
-
-    async function onQuaggaDetected(result){
-      try{
-        const raw = (result && result.codeResult && result.codeResult.code || '').trim();
-        if(!raw) return;
-        const id = extractIdFromAny(raw);
-        if (id) { await closeScanModal(); gotoId(id); }
-      }catch{}
-    }
-
     async function closeScanModal(){
       const modal = document.getElementById('scanModal');
       const video = document.getElementById('scanVideo');
@@ -826,13 +945,11 @@
       modal.setAttribute('aria-hidden','true');
       if(scanRaf) cancelAnimationFrame(scanRaf);
       scanRaf = 0;
-      if(video){ try{ video.pause(); }catch{} video.style.display=''; video.srcObject = null; }
+      if(video) video.pause && video.pause();
       if(scanStream){
-        try{ scanStream.getTracks().forEach(t=>t.stop()); }catch{}
+        scanStream.getTracks().forEach(t=>t.stop());
         scanStream = null;
       }
-      await stopQuaggaIfNeeded();
-      quaggaStartedHere = false;
     }
 
     // Go
@@ -840,6 +957,7 @@
   </script>
 </body>
 </html>
+
 
 
 
