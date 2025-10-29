@@ -177,7 +177,7 @@
 
     /* Ajuste: video y foto ocupan exactamente el mismo lienzo */
     #scan1DModal .video-wrap video,
-    #scan1DModal .video-wrap img#scan1DStill{
+    .video-wrap img#scan1DStill{
       position: absolute;
       inset: 0;
       width: 100%;
@@ -758,8 +758,7 @@ async function openScan1DModal(){
   modal.addEventListener('click', (ev)=>{ if(ev.target===modal) closeScan1DModal(); });
 }
 
-
-async function reset1DView(){
+function reset1DView(){
   const hint  = document.getElementById('scan1DHint');
   const still = document.getElementById('scan1DStill');
   const video = document.getElementById('scan1DVideo');
@@ -767,41 +766,12 @@ async function reset1DView(){
 
   hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
-  video.style.display = 'block';
+  video.style.display = 'block';;
   if (guide) guide.style.display = '';
 
   document.getElementById('retry1DBtn').style.display = 'none';
-  document.getElementById('takePhoto1DBtn').disabled = true;
-
-  try{
-    // Cerrar restos previos
-    if(video.srcObject){
-      try{ video.srcObject.getTracks().forEach(t=>t.stop()); }catch{}
-      video.srcObject = null;
-    }
-    if (typeof scan1DStream !== 'undefined' && scan1DStream){
-      try{ scan1DStream.getTracks().forEach(t=>t.stop()); }catch{}
-      scan1DStream = null;
-    }
-    // Reabrir cámara
-    scan1DStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, aspectRatio: { ideal: 4/3 } },
-      audio: false
-    });
-    video.srcObject = scan1DStream;
-    try { await video.play(); } catch {}
-    await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
-    const t0 = Date.now();
-    while (!(video.videoWidth > 0 && video.videoHeight > 0) && Date.now() - t0 < 1500) {
-      await new Promise(res => setTimeout(res, 50));
-    }
-    document.getElementById('takePhoto1DBtn').disabled = !(video.videoWidth > 0 && video.videoHeight > 0);
-  }catch(e){
-    hint.textContent = 'No se pudo reiniciar la cámara. Verificá permisos.';
-    document.getElementById('takePhoto1DBtn').disabled = false;
-  }
+  document.getElementById('takePhoto1DBtn').disabled = false;
 }
-
 
 // Saca foto, cierra cámara y decodifica la imagen (full → bandas → rotación)
 async function takePhoto1D(){
@@ -820,7 +790,7 @@ async function takePhoto1D(){
     if(!vw || !vh){ hint.textContent = 'No hay imagen de cámara disponible.'; decoding1D = false; return; }
 
     // Limitar resolución para performance
-    const MAX_SIDE = 1600;
+    const MAX_SIDE = 1280;
     let tw = vw, th = vh;
     if (Math.max(vw, vh) > MAX_SIDE) {
       const scale = MAX_SIDE / Math.max(vw, vh);
@@ -867,41 +837,62 @@ async function takePhoto1D(){
     hint.textContent = 'Buscando código de barras…';
     document.getElementById('takePhoto1DBtn').disabled = true;
 
-    let ok = false;
-    // 1) Full
-    ok = ok || await decodeCode128FromCanvas(full);
-    // 2) Central 33%
-    ok = ok || await decodeCode128FromCanvas(crop);
-    // 3) Full rotado 90°
-    ok = ok || await decodeCode128FromCanvas(rotatedCanvas(full));
-    // 4) Banda superior 33%
-    // Extra: full preprocesado
-    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(full)); }
-    // Extra: central preprocesado
-    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(crop)); }
-    // Extra: rotado 180° (full + banda)
-    if(!ok){ ok = await decodeCode128FromCanvas(rotate180Canvas(full)); }
-    if(!ok){ ok = await decodeCode128FromCanvas(rotate180Canvas(crop)); }
-    // Extra: rotado 180° + preprocesado
-    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(rotate180Canvas(crop))); }
+    
+let ok = false;
 
-  if(!ok){
-      cctx.clearRect(0,0,sw,bandH);
-      cctx.drawImage(full, sx, syT, sw, bandH, 0, 0, sw, bandH);
-      ok = ok || await decodeCode128FromCanvas(crop);
-    }
-    // 5) Banda inferior 33%
-    if(!ok){
-      cctx.clearRect(0,0,sw,bandH);
-      cctx.drawImage(full, sx, syB, sw, bandH, 0, 0, sw, bandH);
-      ok = ok || await decodeCode128FromCanvas(crop);
-    }
-    // 6) Banda central rotada
-    if(!ok){
-      cctx.clearRect(0,0,sw,bandH);
-      cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
-      ok = ok || await decodeCode128FromCanvas(rotatedCanvas(crop));
-    }
+// 1) Full
+ok = ok || await decodeCode128FromCanvas(full);
+// 2) Central 28%
+ok = ok || await decodeCode128FromCanvas(crop);
+// 3) Full rotado 90°
+ok = ok || await decodeCode128FromCanvas(rotatedCanvas(full));
+// 4) Banda superior 28%
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, 0, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(crop);
+}
+// 5) Banda inferior 28%
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, th - bandH, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(crop);
+}
+// 6) Banda central rotada 90°
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(rotatedCanvas(crop));
+}
+
+/* ====== EXTRAS: preprocesado + 180° ====== */
+// 7) Full preprocesado (gris + contraste)
+if (!ok) {
+  ok = ok || await decodeCode128FromCanvas(preprocessForBarcode(full));
+}
+// 8) Banda central preprocesada
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(preprocessForBarcode(crop));
+}
+// 9) Full rotado 180°
+if (!ok) {
+  ok = ok || await decodeCode128FromCanvas(rotate180Canvas(full));
+}
+// 10) Banda central rotada 180°
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(rotate180Canvas(crop));
+}
+// 11) Banda central rotada 180° + preprocesada
+if (!ok) {
+  cctx.clearRect(0,0,sw,bandH);
+  cctx.drawImage(full, sx, syC, sw, bandH, 0, 0, sw, bandH);
+  ok = ok || await decodeCode128FromCanvas(preprocessForBarcode(rotate180Canvas(crop)));
+}
+
 
     if(!ok){
       hint.innerHTML = 'No se encontró un Code 128 en la foto. Probá acercarte, alinear mejor o reintentar.';
@@ -916,6 +907,11 @@ async function takePhoto1D(){
   }
 }
 
+function rotatedCanvas(srcCanvas){
+  const dst = document.createElement('canvas');
+  dst.width = srcCanvas.height;
+  dst.height = srcCanvas.width;
+  const dctx = dst.getContext('2d', { willReadFrequently: true }
 
 function preprocessForBarcode(srcCanvas){
   const w = srcCanvas.width, h = srcCanvas.height;
@@ -925,9 +921,7 @@ function preprocessForBarcode(srcCanvas){
   const dctx = dst.getContext('2d', { willReadFrequently: true });
   const img = sctx.getImageData(0,0,w,h);
   const d = img.data;
-  // simple grayscale + contrast stretch
-  // contrastFactor ~1.35, brightness +10
-  const cf = 1.35, br = 10;
+  const cf = 1.35, br = 10; // contraste y brillo
   for (let i=0;i<d.length;i+=4){
     const r = d[i], g = d[i+1], b = d[i+2];
     let y = (r*0.2126 + g*0.7152 + b*0.0722);
@@ -938,11 +932,9 @@ function preprocessForBarcode(srcCanvas){
   dctx.putImageData(img, 0, 0);
   return dst;
 }
-function rotatedCanvas(srcCanvas){
-  const dst = document.createElement('canvas');
-  dst.width = srcCanvas.height;
-  dst.height = srcCanvas.width;
-  const dctx = dst.getContext('2d', { willReadFrequently: true }
+
+
+
 function rotate180Canvas(srcCanvas){
   const dst = document.createElement('canvas');
   dst.width = srcCanvas.width;
@@ -953,6 +945,7 @@ function rotate180Canvas(srcCanvas){
   ctx.drawImage(srcCanvas, -srcCanvas.width/2, -srcCanvas.height/2);
   return dst;
 }
+
 );
   dctx.save();
   dctx.translate(dst.width/2, dst.height/2);
@@ -962,35 +955,30 @@ function rotate180Canvas(srcCanvas){
   return dst;
 }
 
-
 function decodeCode128FromCanvas(cv){
   return new Promise((resolve) => {
     if(!window.Quagga || !cv) return resolve(false);
     try{
       const dataUrl = cv.toDataURL('image/png');
-      const configs = [
-        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 1200 }, locator: { patchSize: 'x-large', halfSample: false }, decoder: { readers: ['code_128_reader'] }, multiple: false },
-        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 1000 }, locator: { patchSize: 'large', halfSample: false },  decoder: { readers: ['code_128_reader'] }, multiple: false },
-        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 800  }, locator: { patchSize: 'medium', halfSample: true }, decoder: { readers: ['code_128_reader'] }, multiple: false }
-      ];
-      const tryNext = (i) => {
-        if(i >= configs.length) return resolve(false);
-        window.Quagga.decodeSingle(configs[i], (result) => {
-          try{
-            const raw = (result && result.codeResult && result.codeResult.code) ? String(result.codeResult.code).trim() : '';
-            if(raw){
-              const id = extractIdFromAny(raw);
-              if(id){ closeScan1DModal().then(()=>{ gotoId(id); }); return resolve(true); }
-            }
-            tryNext(i+1);
-          }catch{ resolve(false); }
-        });
-      };
-      tryNext(0);
+      window.Quagga.decodeSingle({
+        src: dataUrl,
+        numOfWorkers: 0,
+        inputStream: { size: 800 },
+        locator: { patchSize: 'medium', halfSample: true },
+        decoder: { readers: ['code_128_reader'] }
+      }, (result) => {
+        try{
+          const raw = (result && result.codeResult && result.codeResult.code) ? String(result.codeResult.code).trim() : '';
+          if(raw){
+            const id = extractIdFromAny(raw);
+            if(id){ closeScan1DModal().then(()=>{ gotoId(id); }); return resolve(true); }
+          }
+          resolve(false);
+        }catch{ resolve(false); }
+      });
     }catch{ resolve(false); }
   });
 }
-
 
 async function closeScan1DModal(){
   const modal = document.getElementById('scan1DModal');
@@ -1047,11 +1035,10 @@ async function closeScan1DModal(){
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
-        
         video.style.display = 'block';
         try { await video.play(); } catch {}
         await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
-// Bucle de lectura
+        // Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
         if(!barcodeDetector && !useJsQR){
           hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
@@ -1107,9 +1094,7 @@ async function closeScan1DModal(){
       if(scanStream){
         scanStream.getTracks().forEach(t=>t.stop());
         scanStream = null;
-      
-  if (video) { try{ video.style.display=''; }catch{} }
-}
+      }
     }
 
     // Go
@@ -1117,7 +1102,6 @@ async function closeScan1DModal(){
   </script>
 </body>
 </html>
-
 
 
 
