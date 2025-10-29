@@ -758,7 +758,8 @@ async function openScan1DModal(){
   modal.addEventListener('click', (ev)=>{ if(ev.target===modal) closeScan1DModal(); });
 }
 
-function reset1DView(){
+
+async function reset1DView(){
   const hint  = document.getElementById('scan1DHint');
   const still = document.getElementById('scan1DStill');
   const video = document.getElementById('scan1DVideo');
@@ -766,12 +767,41 @@ function reset1DView(){
 
   hint.textContent = 'Alineá el código dentro de la franja marcada y tocá “Tomar foto”.';
   still.style.display = 'none';
-  video.style.display = 'block';;
+  video.style.display = 'block';
   if (guide) guide.style.display = '';
 
   document.getElementById('retry1DBtn').style.display = 'none';
-  document.getElementById('takePhoto1DBtn').disabled = false;
+  document.getElementById('takePhoto1DBtn').disabled = true;
+
+  try{
+    // Cerrar restos previos
+    if(video.srcObject){
+      try{ video.srcObject.getTracks().forEach(t=>t.stop()); }catch{}
+      video.srcObject = null;
+    }
+    if (typeof scan1DStream !== 'undefined' && scan1DStream){
+      try{ scan1DStream.getTracks().forEach(t=>t.stop()); }catch{}
+      scan1DStream = null;
+    }
+    // Reabrir cámara
+    scan1DStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, aspectRatio: { ideal: 4/3 } },
+      audio: false
+    });
+    video.srcObject = scan1DStream;
+    try { await video.play(); } catch {}
+    await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
+    const t0 = Date.now();
+    while (!(video.videoWidth > 0 && video.videoHeight > 0) && Date.now() - t0 < 1500) {
+      await new Promise(res => setTimeout(res, 50));
+    }
+    document.getElementById('takePhoto1DBtn').disabled = !(video.videoWidth > 0 && video.videoHeight > 0);
+  }catch(e){
+    hint.textContent = 'No se pudo reiniciar la cámara. Verificá permisos.';
+    document.getElementById('takePhoto1DBtn').disabled = false;
+  }
 }
+
 
 // Saca foto, cierra cámara y decodifica la imagen (full → bandas → rotación)
 async function takePhoto1D(){
@@ -790,7 +820,7 @@ async function takePhoto1D(){
     if(!vw || !vh){ hint.textContent = 'No hay imagen de cámara disponible.'; decoding1D = false; return; }
 
     // Limitar resolución para performance
-    const MAX_SIDE = 1280;
+    const MAX_SIDE = 1600;
     let tw = vw, th = vh;
     if (Math.max(vw, vh) > MAX_SIDE) {
       const scale = MAX_SIDE / Math.max(vw, vh);
@@ -889,30 +919,35 @@ function rotatedCanvas(srcCanvas){
   return dst;
 }
 
+
 function decodeCode128FromCanvas(cv){
   return new Promise((resolve) => {
     if(!window.Quagga || !cv) return resolve(false);
     try{
       const dataUrl = cv.toDataURL('image/png');
-      window.Quagga.decodeSingle({
-        src: dataUrl,
-        numOfWorkers: 0,
-        inputStream: { size: 800 },
-        locator: { patchSize: 'medium', halfSample: true },
-        decoder: { readers: ['code_128_reader'] }
-      }, (result) => {
-        try{
-          const raw = (result && result.codeResult && result.codeResult.code) ? String(result.codeResult.code).trim() : '';
-          if(raw){
-            const id = extractIdFromAny(raw);
-            if(id){ closeScan1DModal().then(()=>{ gotoId(id); }); return resolve(true); }
-          }
-          resolve(false);
-        }catch{ resolve(false); }
-      });
+      const configs = [
+        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 1200 }, locator: { patchSize: 'x-large', halfSample: false }, decoder: { readers: ['code_128_reader'] }, multiple: false },
+        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 1000 }, locator: { patchSize: 'large', halfSample: false },  decoder: { readers: ['code_128_reader'] }, multiple: false },
+        { src: dataUrl, numOfWorkers: 0, locate: true, inputStream: { size: 800  }, locator: { patchSize: 'medium', halfSample: true }, decoder: { readers: ['code_128_reader'] }, multiple: false }
+      ];
+      const tryNext = (i) => {
+        if(i >= configs.length) return resolve(false);
+        window.Quagga.decodeSingle(configs[i], (result) => {
+          try{
+            const raw = (result && result.codeResult && result.codeResult.code) ? String(result.codeResult.code).trim() : '';
+            if(raw){
+              const id = extractIdFromAny(raw);
+              if(id){ closeScan1DModal().then(()=>{ gotoId(id); }); return resolve(true); }
+            }
+            tryNext(i+1);
+          }catch{ resolve(false); }
+        });
+      };
+      tryNext(0);
     }catch{ resolve(false); }
   });
 }
+
 
 async function closeScan1DModal(){
   const modal = document.getElementById('scan1DModal');
@@ -969,11 +1004,11 @@ async function closeScan1DModal(){
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
+        
         video.style.display = 'block';
         try { await video.play(); } catch {}
         await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
-
-        // Bucle de lectura
+// Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
         if(!barcodeDetector && !useJsQR){
           hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
@@ -1029,7 +1064,9 @@ async function closeScan1DModal(){
       if(scanStream){
         scanStream.getTracks().forEach(t=>t.stop());
         scanStream = null;
-      }
+      
+  if (video) { try{ video.style.display=''; }catch{} }
+}
     }
 
     // Go
@@ -1037,6 +1074,7 @@ async function closeScan1DModal(){
   </script>
 </body>
 </html>
+
 
 
 
