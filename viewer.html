@@ -176,8 +176,8 @@
       height: 33%; outline: 2px dashed rgba(255,255,255,.5); pointer-events:none; }
 
     /* Ajuste: video y foto ocupan exactamente el mismo lienzo */
-    .video-wrap video,
-    .video-wrap img#scan1DStill{
+    #scan1DModal .video-wrap video,
+    #scan1DModal .video-wrap img#scan1DStill{
       position: absolute;
       inset: 0;
       width: 100%;
@@ -852,7 +852,7 @@ async function takePhoto1D(){
     still.style.display = 'block';
 
     // Recortes (33% de alto)
-    const bandH = Math.round(th * 0.33);
+    const bandH = Math.round(th * 0.28);
     const sx = 0, sw = tw;
     const syC = Math.round((th - bandH)/2);
     const syT = 0;
@@ -875,7 +875,17 @@ async function takePhoto1D(){
     // 3) Full rotado 90°
     ok = ok || await decodeCode128FromCanvas(rotatedCanvas(full));
     // 4) Banda superior 33%
-    if(!ok){
+    // Extra: full preprocesado
+    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(full)); }
+    // Extra: central preprocesado
+    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(crop)); }
+    // Extra: rotado 180° (full + banda)
+    if(!ok){ ok = await decodeCode128FromCanvas(rotate180Canvas(full)); }
+    if(!ok){ ok = await decodeCode128FromCanvas(rotate180Canvas(crop)); }
+    // Extra: rotado 180° + preprocesado
+    if(!ok){ ok = await decodeCode128FromCanvas(preprocessForBarcode(rotate180Canvas(crop))); }
+
+  if(!ok){
       cctx.clearRect(0,0,sw,bandH);
       cctx.drawImage(full, sx, syT, sw, bandH, 0, 0, sw, bandH);
       ok = ok || await decodeCode128FromCanvas(crop);
@@ -906,11 +916,44 @@ async function takePhoto1D(){
   }
 }
 
+
+function preprocessForBarcode(srcCanvas){
+  const w = srcCanvas.width, h = srcCanvas.height;
+  const dst = document.createElement('canvas');
+  dst.width = w; dst.height = h;
+  const sctx = srcCanvas.getContext('2d', { willReadFrequently: true });
+  const dctx = dst.getContext('2d', { willReadFrequently: true });
+  const img = sctx.getImageData(0,0,w,h);
+  const d = img.data;
+  // simple grayscale + contrast stretch
+  // contrastFactor ~1.35, brightness +10
+  const cf = 1.35, br = 10;
+  for (let i=0;i<d.length;i+=4){
+    const r = d[i], g = d[i+1], b = d[i+2];
+    let y = (r*0.2126 + g*0.7152 + b*0.0722);
+    y = (y - 128) * cf + 128 + br;
+    if (y < 0) y = 0; else if (y > 255) y = 255;
+    d[i] = d[i+1] = d[i+2] = y;
+  }
+  dctx.putImageData(img, 0, 0);
+  return dst;
+}
 function rotatedCanvas(srcCanvas){
   const dst = document.createElement('canvas');
   dst.width = srcCanvas.height;
   dst.height = srcCanvas.width;
-  const dctx = dst.getContext('2d', { willReadFrequently: true });
+  const dctx = dst.getContext('2d', { willReadFrequently: true }
+function rotate180Canvas(srcCanvas){
+  const dst = document.createElement('canvas');
+  dst.width = srcCanvas.width;
+  dst.height = srcCanvas.height;
+  const ctx = dst.getContext('2d', { willReadFrequently: true });
+  ctx.translate(dst.width/2, dst.height/2);
+  ctx.rotate(Math.PI);
+  ctx.drawImage(srcCanvas, -srcCanvas.width/2, -srcCanvas.height/2);
+  return dst;
+}
+);
   dctx.save();
   dctx.translate(dst.width/2, dst.height/2);
   dctx.rotate(Math.PI/2);
@@ -1004,7 +1047,11 @@ async function closeScan1DModal(){
         scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = scanStream;
 
-        // Bucle de lectura
+        
+        video.style.display = 'block';
+        try { await video.play(); } catch {}
+        await new Promise(r => { if (video.readyState >= 1) r(); else video.onloadedmetadata = r; });
+// Bucle de lectura
         const useJsQR = !barcodeDetector && typeof window.jsQR === 'function';
         if(!barcodeDetector && !useJsQR){
           hint.innerHTML = 'Tu navegador no soporta detección nativa. Usá "Pegar" o escribí el ID. (QR fallback requiere jsQR)';
@@ -1060,7 +1107,9 @@ async function closeScan1DModal(){
       if(scanStream){
         scanStream.getTracks().forEach(t=>t.stop());
         scanStream = null;
-      }
+      
+  if (video) { try{ video.style.display=''; }catch{} }
+}
     }
 
     // Go
@@ -1068,7 +1117,6 @@ async function closeScan1DModal(){
   </script>
 </body>
 </html>
-
 
 
 
